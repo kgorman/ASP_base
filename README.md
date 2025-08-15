@@ -393,7 +393,10 @@ The `tools/` directory contains Python utilities for managing the Atlas Stream P
 
 ## Documentation
 
-- See documentation in `docs/` folder for detailed guides
+- **[AI Assistant Guide](docs/AI_ASSISTANT_GUIDE.md)** - Comprehensive guidance for AI assistants using this template
+- **[Connection Guide](docs/CONNECTION_GUIDE.md)** - How to configure connections to data sources
+- **[Development Workflow](docs/DEVELOPMENT_WORKFLOW.md)** - Best practices for development and testing
+- **[Pipeline Patterns](docs/PIPELINE_PATTERNS.md)** - Common stream processing patterns and examples
 - JSON processor files contain configuration examples
 - Testing framework provides validation and examples
 
