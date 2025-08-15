@@ -353,51 +353,6 @@ Use `tools/sp` to deploy and monitor your processors in production.
 3. Review MongoDB Atlas Stream Processing logs in the UI
 4. Validate your JSON files with a JSON formatter
 
-## Next Steps
-
-1. **Fork this repository** as your starting point
-2. **Update the connections** to match your data sources  
-3. **Customize the processors** for your use case
-4. **Add new processors** as separate JSON files
-5. **Deploy with confidence** using the `tools/sp` command
-
-This repository provides everything you need to build production-ready stream processing applications on MongoDB Atlas. Happy streaming!
-├── lightning_alert_processor.js    # Lightning detection and alert processor pipeline
-└── tools/                          # Python management tools
-    ├── atlas_api.py                # Shared Atlas API library
-    ├── create_connections.py       # Connection creation tool
-    ├── create_processors.py        # Processor creation tool
-    ├── control_processors.py       # Processor control and monitoring tool
-    └── README.md                   # Tools documentation
-```
-
-## Quick Start
-
-1. **Configure credentials** in `api.txt`:
-   ```
-   PUBLIC_KEY=your_atlas_public_key
-   PRIVATE_KEY=your_atlas_private_key
-   PROJECT_ID=your_project_id
-   SP_INSTANCE_NAME=your_stream_instance_name
-   ```
-
-2. **Create connections**:
-   ```bash
-   cd tools
-   python3 create_connections.py
-   ```
-
-3. **Create processors**:
-   ```bash
-   python3 create_processors.py
-   ```
-
-4. **Monitor and control**:
-   ```bash
-   python3 control_processors.py status
-   python3 control_processors.py stats
-   ```
-
 ## Configuration Files
 
 ### connections.json
