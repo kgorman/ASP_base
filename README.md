@@ -137,59 +137,65 @@ Defines external connections (databases, APIs, external services):
 
 ### Processor Definitions (`processors/*.json`)
 
-Each processor is a separate JSON file defining a stream processing pipeline:
+Each processor is a JSON file defining a complete stream processing pipeline. Atlas Stream Processing supports the full MongoDB aggregation pipeline syntax plus streaming-specific stages.
 
+**Required Structure:**
 ```json
 {
+  "name": "your_processor_name",
+  "pipeline": [
+    // Your aggregation pipeline stages here
+  ],
+  "options": {
+    // Optional configuration like DLQ, etc.
+  }
+}
+```
+
+**Example - Basic Data Processing:**
+```json
+{
+  "name": "solar_data_processor",
   "pipeline": [
     {
       "$source": {
-        "connectionName": "sample_stream_solar",
-        "timeField": {"$dateFromString": {"dateString": "$timestamp"}}
-      }
-    },
-    {
-      "$match": {
-        "temperature": {"$gt": 90}
+        "connectionName": "sample_stream_solar"
       }
     },
     {
       "$addFields": {
-        "alert_message": "High temperature detected!",
-        "alert_timestamp": "$$NOW"
+        "processed_at": "$$NOW",
+        "_ts": "$$NOW"
       }
     },
     {
       "$merge": {
         "into": {
-          "connectionName": "my_cluster",
-          "db": "alerts",
-          "coll": "temperature_alerts"
+          "connectionName": "atlas_cluster",
+          "db": "solar",
+          "coll": "processed_data"
         }
       }
     }
-  ],
-  "options": {
-    "dlq": {
-      "connectionName": "my_cluster",
-      "db": "errors", 
-      "coll": "processor_errors"
-    }
-  }
+  ]
 }
 ```
 
-**Pipeline Stages:**
-- **$source**: Data input (database, sample data, etc.)
-- **$match**: Filter documents
-- **$addFields**: Add or modify fields
-- **$merge**: Output to destination collections
-- **$emit**: Output to streaming platforms
-- **$https**: Call external APIs
-- **$tumblingWindow**: Time-based aggregations
+**Building Your Pipelines:**
 
-**Options:**
-- **dlq**: Dead letter queue for failed messages
+Atlas Stream Processing supports hundreds of operators and stages. Rather than limiting yourself to a small subset, explore the full capabilities:
+
+- **📚 [Official Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete reference for all stages and operators
+- **📖 [Aggregation Pipeline Reference](https://www.mongodb.com/docs/manual/aggregation/)** - All MongoDB aggregation stages work in stream processing
+- **🔧 [Stream Processing Specific Stages](https://www.mongodb.com/docs/atlas/atlas-sp/pipeline-stages/)** - Streaming-specific operations like `$source`, `$emit`, `$merge`
+
+**Common Patterns:**
+- **Data Ingestion**: `$source` → transformations → `$merge`
+- **Real-time Analytics**: `$source` → `$match` → aggregations → `$emit`  
+- **ETL Processing**: `$source` → complex transformations → multiple outputs
+- **Alerting**: `$source` → `$match` conditions → `$emit` notifications
+
+The examples in this repository show basic patterns, but your processors can be as simple or complex as your use case requires. Use the official documentation to discover the right stages for your specific needs.
 
 ## Tools/SP Command Reference
 
