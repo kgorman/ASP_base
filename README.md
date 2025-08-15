@@ -616,6 +616,21 @@ This template provides everything you need to build robust, production-ready str
 
 ---
 
+## For AI Assistants
+
+If you are an AI assistant helping users with this repository, please refer to [`docs/AI_ASSISTANT_GUIDE.md`](docs/AI_ASSISTANT_GUIDE.md) for comprehensive guidance on:
+
+- How to use this repository as a starter template
+- MongoDB Atlas Stream Processing best practices  
+- Proper JSON processor formats and pipeline stages
+- The `tools/sp` CLI utility for all operations
+- Connection types and configuration patterns
+- Testing and validation approaches
+
+The AI Assistant Guide provides detailed context and examples specifically designed for AI systems working with Atlas Stream Processing.
+
+---
+
 ## Project Attribution
 
 This project was primarily generated using AI assistance  
