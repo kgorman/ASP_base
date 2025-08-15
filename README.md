@@ -1,25 +1,30 @@
-# WeatherFlow Atlas Stream Processing Starter
+# Atlas Stream Processing Base
 
-A complete example and toolkit for building MongoDB Atlas Stream Processing applications. This repository provides a fully functional weather data processing system with lightning detection alerts, along with powerful command-line tools for managing stream processors and connections.
+A complete toolkit and template for building MongoDB Atlas Stream Processing applications. This repository provides a ready-to-use foundation with powerful command-line tools, structured configurations, and example processors to jumpstart your stream processing projects.
 
 ## What This Provides
 
-- **Complete working example** of weather data ingestion and alert processing
-- **Unified CLI tool** (`tools/sp`) for managing all Stream Processing operations
+- **Complete development toolkit** with unified CLI for all Stream Processing operations
+- **Template structure** with example processors using sample solar data
 - **JSON-based configuration** for processors and connections
 - **Color-coded terminal output** for easy debugging and monitoring
 - **Production-ready structure** you can clone and customize for your own use cases
+- **Comprehensive testing framework** to validate your processors
 
 ## Project Structure
 
 ```
-weatherflow_atlas/
+atlas_stream_processing/
 ├── config.txt                 # Atlas API credentials and configuration
 ├── connections/               # Connection definitions (databases, APIs, etc.)
 │   └── connections.json      
 ├── processors/               # Stream processor pipeline definitions
-│   ├── lightning_alert_processor.json
-│   └── weatherflow_source_client.json
+│   ├── solar_simple_processor.json
+│   └── test_emit_processor.json
+├── tests/                   # Validation and testing framework
+│   ├── test_processors.py
+│   ├── test_runner.py
+│   └── README.md
 └── tools/                   # Management utilities
     ├── sp                   # Unified CLI tool (executable)
     ├── atlas_api.py        # Core API library
@@ -32,7 +37,7 @@ weatherflow_atlas/
 
 ```bash
 git clone <this-repo>
-cd weatherflow_atlas
+cd ASP_base
 pip install -r tools/requirements.txt
 cp config.txt.example config.txt
 # Edit config.txt with your Atlas credentials
@@ -44,7 +49,7 @@ Use the repository setup script to create a fresh structure:
 
 ```bash
 # Download just the setup script
-curl -O https://raw.githubusercontent.com/kgorman/weatherflow_atlas/main/tools/create-repo-structure.sh
+curl -O https://raw.githubusercontent.com/kgorman/ASP_base/main/tools/create-repo-structure.sh
 chmod +x create-repo-structure.sh
 
 # Create new repository structure
@@ -109,15 +114,14 @@ Defines external connections (databases, APIs, external services):
 {
   "connections": [
     {
-      "name": "weatherflow_api",
-      "type": "Https", 
-      "url": "https://swd.weatherflow.com",
-      "description": "WeatherFlow API for weather data"
+      "name": "sample_stream_solar",
+      "type": "Sample",
+      "description": "Sample solar data stream for testing"
     },
     {
-      "name": "my_cluster",
+      "name": "atlas_cluster",
       "type": "Cluster",
-      "clusterName": "MyAtlasCluster",
+      "clusterName": "YourAtlasCluster",
       "description": "MongoDB Atlas cluster for data storage"
     }
   ]
@@ -399,315 +403,257 @@ This repository provides everything you need to build production-ready stream pr
 ### connections.json
 Defines Atlas Stream Processing connections:
 
-- **weatherflow_http**: HTTP connection to WeatherFlow API
-- **kgShardedCluster01**: MongoDB Atlas cluster for data storage
+- **sample_stream_solar**: Sample data stream for solar/energy data
+- **atlas_cluster**: MongoDB Atlas cluster for data storage
 
 ## Stream Processing Pipelines
 
-Stream processors are defined in JavaScript files using Terraform-like format:
+Stream processors are defined in JSON files with MongoDB aggregation pipeline syntax:
 
-### weatherflow_source_client.js
-- Fetches data from WeatherFlow API every 5 minutes
-- Processes and enriches weather observations
-- Stores data in MongoDB Atlas cluster
-- Handles errors via dead letter queue
+### solar_simple_processor.json
+- Uses sample solar data from built-in stream
+- Processes and enriches solar observations with timestamps
+- Stores data in MongoDB Atlas cluster using $merge operation
+- Demonstrates basic data ingestion pattern
 
-### lightning_alert_processor.js
+### test_emit_processor.json
 
-- Monitors for lightning activity
-- Stores alerts in database for dangerous conditions
-- Tracks lightning strike counts and distances
+- Uses sample solar data from built-in stream
+- Demonstrates $emit operation for streaming output
+- Shows how to send processed data to external systems or topics
 
 ## Management Tools
 
 The `tools/` directory contains Python utilities for managing the Atlas Stream Processing environment:
 
-- **create_connections.py**: Creates and configures connections
-- **create_processors.py**: Deploys processor pipelines from JavaScript files
-- **control_processors.py**: Start, stop, monitor, and control processors
-- **atlas_api.py**: Shared library for Atlas API operations
+- **sp**: Unified CLI tool for all Stream Processing operations (create, start, stop, test, etc.)
+- **atlas_api.py**: Shared library for Atlas API operations with JSON colorization
+- **test_runner.py**: Quick validation tool for processor configurations
 
 ## Features
 
-- **Real-time Processing**: Continuous weather data ingestion and processing
-- **Lightning Alerts**: Automated database alerts for lightning activity
-- **Error Handling**: Dead letter queues and comprehensive error handling
-- **Monitoring**: Detailed statistics and status monitoring
+- **Template Structure**: Ready-to-use foundation for any stream processing project
+- **Sample Data Processing**: Built-in examples using solar energy data
+- **Comprehensive Testing**: Dual validation framework with unittest and quick tests
+- **Error Handling**: JSON validation and comprehensive error reporting
+- **Monitoring**: Detailed statistics and status monitoring with colorized output
 - **Configuration-Driven**: JSON-based configuration for easy management
 - **Color-Coded Output**: User-friendly terminal output with status indicators
 
 ## Prerequisites
 
 - MongoDB Atlas account with Stream Processing enabled
-- WeatherFlow API access
 - Python 3.7+ with `requests` library
+- Basic understanding of MongoDB aggregation pipelines
 
 ## Documentation
 
-- See `tools/README.md` for detailed tool documentation
-- JavaScript pipeline files contain inline documentation
-- Configuration files include examples and variable substitution
-3. **Call WeatherFlow API** - HTTP stage fetches real weather station data
-4. **Store historical data** - Weather data is merged into MongoDB Atlas with full history
+- See documentation in `docs/` folder for detailed guides
+- JSON processor files contain configuration examples
+- Testing framework provides validation and examples
 
 ## Architecture
 
 ```
-Sample Solar Stream → 5-min Window → HTTP API Call → Data Transform → MongoDB Atlas
-       ↓                   ↓              ↓             ↓              ↓
-   Timer Trigger      Frequency       WeatherFlow    Structure       weather_history
-  (data discarded)     Control          API Call      & Enrich        Collection
+Sample Solar Stream → Data Processing → MongoDB Atlas / Stream Output
+       ↓                   ↓                    ↓
+   Built-in Sample     Transform &          Store or Emit
+     Data Source       Add Timestamp        to External Systems
 ```
 
-## Files
+## Example Processors Included
 
-- **`weatherflow_cron_processor.js`** - Main stream processor implementation
-- **`setup_weatherflow_connection.sh`** - Script to create HTTP connection via Atlas Admin API
-- **`red_flag_warning.py`** - Python change stream processor (existing)
-- **`requirements.txt`** - Python dependencies (existing)
+### solar_simple_processor.json
+- **Purpose**: Demonstrates basic data ingestion and storage pattern
+- **Source**: Uses built-in sample solar data stream
+- **Processing**: Adds timestamps and filters data
+- **Output**: Merges data into MongoDB Atlas collection
 
-## Setup Instructions
+### test_emit_processor.json  
+- **Purpose**: Shows how to emit data to external systems
+- **Source**: Uses built-in sample solar data stream
+- **Processing**: Transforms and enriches data
+- **Output**: Emits processed data to external topics/systems
 
-### 1. Prerequisites
+## Getting Started
 
-- MongoDB Atlas cluster with Stream Processing enabled
-- Atlas Admin API key with Stream Processing permissions
-- WeatherFlow API token and station ID (configured in `../client/kg_station.txt`)
-
-### 2. Create HTTP Connection
-
-First, set up the HTTP connection for the WeatherFlow API:
+### 1. Clone and Setup
 
 ```bash
-# Set your Atlas credentials
-export ATLAS_PUBLIC_KEY="your_atlas_public_key"
-export ATLAS_PRIVATE_KEY="your_atlas_private_key"
-export ATLAS_PROJECT_ID="your_atlas_project_id"
-export ATLAS_SP_INSTANCE_NAME="your_stream_processing_instance_name"
-
-# Run the setup script
-./setup_weatherflow_connection.sh
+git clone <this-repo>
+cd ASP_base
+pip install -r tools/requirements.txt
+cp config.txt.example config.txt
+# Edit config.txt with your Atlas credentials
 ```
 
-The script will:
-- Validate your configuration
-- Test WeatherFlow API connectivity
-- Create the `weatherflow_api` HTTP connection in Atlas
+### 2. Test Your Setup
 
-### 3. Deploy Stream Processor
+```bash
+# Validate all processor configurations
+./tools/sp test
 
-Deploy the stream processor using the Atlas UI or MongoDB Shell:
+# Test individual processor
+./tools/sp test -p solar_simple_processor
+```
 
-```javascript
-// In MongoDB Shell connected to your Atlas cluster
-load("weatherflow_cron_processor.js")
+### 3. Create Connections and Processors
+
+```bash
+# Create connections defined in connections.json
+./tools/sp create connections
+
+# Create processors from JSON files
+./tools/sp create processors
 ```
 
 ### 4. Start Processing
 
-```javascript
-// Start the processor
-sp.weatherflow_cron_fetcher.start()
+```bash
+# Start all processors
+./tools/sp start
 
-// Check status
-sp.weatherflow_cron_fetcher.stats()
+# Check processor status
+./tools/sp list
 
-// View recent data
-db.weather_history.find().sort({processing_timestamp: -1}).limit(5)
+# View detailed statistics
+./tools/sp stats
 ```
 
 ## Configuration
 
-### Station Configuration
+## Customizing for Your Use Case
 
-The processor uses station configuration from `../client/kg_station.txt`:
-- **Station ID**: 72117
-- **API Token**: 23e0cb90-8a11-4ca5-871e-133ab69c47ae
-- **Base URL**: https://swd.weatherflow.com/swd/rest/observations/station/
+This template provides examples using sample solar data, but you can easily adapt it for any streaming use case:
 
-### Processing Frequency
+### Update Connections
+Edit `connections/connections.json` to define your data sources:
 
-The processor fetches data **every 5 minutes** controlled by the tumbling window:
-
-```javascript
-const timerWindow = {
-    $tumblingWindow: {
-        interval: { size: NumberInt(5), unit: "minute" },
-        // ...
-    }
-};
-```
-
-To change frequency, modify the `interval.size` value.
-
-### Output Collections
-
-- **`demo.weather_history`** - Historical weather data with full station observations
-- **`demo.weather_fetch_dlq`** - Dead letter queue for failed processing
-
-## Data Structure
-
-### Input (WeatherFlow API Response)
 ```json
 {
-  "station_id": 72117,
-  "obs": [
+  "connections": [
     {
-      "timestamp": 1642723200,
-      "air_temperature": 15.2,
-      "relative_humidity": 65,
-      "wind_avg": 3.2,
-      "lightning_strike_count": 0,
-      // ... more fields
+      "name": "your_api_endpoint",
+      "type": "Https",
+      "url": "https://your-api.com/data",
+      "description": "Your external API"
+    },
+    {
+      "name": "your_cluster",
+      "type": "Cluster", 
+      "clusterName": "YourAtlasCluster",
+      "description": "Your Atlas cluster"
     }
-  ],
-  "station_name": "Station Name",
-  "public_name": "Public Display Name",
-  // ... station metadata
+  ]
 }
 ```
 
-### Output (MongoDB Document)
-```json
-{
-  "_id": ObjectId("..."),
-  "station_id": "72117",
-  "station_meta": {
-    "station_name": "Station Name",
-    "latitude": 40.7128,
-    "longitude": -74.0060,
-    "elevation": 10
-  },
-  "source": "weatherflow_api",
-  "processing_timestamp": ISODate("2025-01-15T10:30:00Z"),
-  "fetch_trigger": {
-    "triggerTime": "2025-01-15T10:25:00Z",
-    "sampleCount": 143
-  },
-  "observations": { /* full observation object */ },
-  "temperature": 15.2,
-  "humidity": 65,
-  "wind_speed": 3.2,
-  "lightning_strike_count": 0,
-  // ... structured weather fields
-  "raw_response": { /* complete API response */ }
-}
-```
+### Create Your Processors
+Use the example processors as templates:
 
-## Monitoring
+- **Data Ingestion**: Copy `solar_simple_processor.json` and modify the source and processing logic
+- **Stream Output**: Copy `test_emit_processor.json` and change the emit destination
+- **Complex Processing**: Add aggregation stages, filtering, and transformations
 
-### Check Processor Status
-```javascript
-// View processor statistics
-sp.weatherflow_cron_fetcher.stats()
+### Testing Your Changes
+Always validate your processors before deployment:
 
-// View processor definition
-sp.weatherflow_cron_fetcher.sample()
-```
-
-### Monitor Data Collection
-```javascript
-// Recent weather data
-db.weather_history.find().sort({processing_timestamp: -1}).limit(10)
-
-// Count by hour
-db.weather_history.aggregate([
-  {
-    $group: {
-      _id: {
-        $dateToString: {
-          format: "%Y-%m-%d %H:00",
-          date: "$processing_timestamp"
-        }
-      },
-      count: { $sum: 1 }
-    }
-  },
-  { $sort: { _id: -1 } },
-  { $limit: 24 }
-])
-```
-
-### Check for Errors
-```javascript
-// View dead letter queue
-db.weather_fetch_dlq.find().sort({_stream_meta.timestamp: -1})
-
-// Count errors by type
-db.weather_fetch_dlq.aggregate([
-  {
-    $group: {
-      _id: "$errInfo.reason",
-      count: { $sum: 1 }
-    }
-  }
-])
-```
-
-## Integration with Existing System
-
-This processor complements your existing weather system:
-
-### Lightning Detection
-The weather data can trigger your existing lightning detection logic:
-
-```javascript
-// Example trigger condition (add to processor)
-const lightningCheck = {
-  $match: {
-    $or: [
-      { "lightning_strike_count_last_1hr": { $gt: 2 } },
-      { "lightning_strike_last_distance": { $lt: 20 } }
-    ]
-  }
-};
-```
-
-### Red Flag Warning
-Weather data feeds into your red flag warning calculations:
-
-```javascript
-// Example red flag conditions
-const redFlagCheck = {
-  $match: {
-    $and: [
-      { "humidity": { $lte: 15 } },
-      { "wind_gust": { $gte: 25 } }
-    ]
-  }
-};
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **HTTP Connection Failed**
-   - Verify Atlas Admin API credentials
-   - Check Stream Processing instance name
-   - Ensure proper permissions
-
-2. **WeatherFlow API Errors**
-   - Verify API token in `kg_station.txt`
-   - Check station ID (72117)
-   - Test API endpoint manually
-
-3. **No Data in Collection**
-   - Check processor status: `sp.weatherflow_cron_fetcher.stats()`
-   - Verify sample solar stream is active
-   - Check dead letter queue for errors
-
-### Manual Testing
-
-Test the WeatherFlow API directly:
 ```bash
-curl "https://swd.weatherflow.com/swd/rest/observations/station/72117?token=23e0cb90-8a11-4ca5-871e-133ab69c47ae"
+# Test all processors
+./tools/sp test
+
+# Test specific processor
+./tools/sp test -p your_new_processor
+
+# Run comprehensive validation
+cd tests && ./test_runner.py
 ```
+
+## Use Case Examples
+
+This template structure works well for:
+
+### IoT Data Processing
+- Sensor data ingestion and alerting
+- Device status monitoring
+- Real-time analytics
+
+### E-commerce Analytics
+- Order processing pipelines
+- Customer behavior tracking
+- Inventory management
+
+### Financial Data
+- Transaction monitoring
+- Fraud detection
+- Risk assessment
+
+### Social Media Analytics
+- Content processing
+- Sentiment analysis
+- User engagement tracking
+
+## Customization Steps
+
+### 1. Update Connections
+Edit `connections/connections.json` with your data sources
+
+### 2. Create Your Processors
+Copy and modify the example processors
+
+### 3. Modify Alert Logic
+Implement your business logic in the pipeline stages
+
+### 4. Deploy and Monitor
+Use the unified `sp` tool to manage your processors
+
+## Testing Framework
+
+The repository includes comprehensive testing:
+
+### Quick Validation
+```bash
+# Test all processors
+./tools/sp test
+
+# Test specific processor  
+./tools/sp test -p processor_name
+```
+
+### Comprehensive Testing
+```bash
+# Run full test suite
+cd tests && python test_processors.py
+
+# Quick colorized output
+cd tests && ./test_runner.py
+```
+
+## Common Issues
+
+1. **Configuration Errors**
+   - Verify your Atlas API keys have Stream Processing permissions
+   - Check connection definitions in `connections.json`
+   - Ensure processor names match file names
+
+2. **JSON Validation Errors**  
+   - Use the test framework to validate syntax
+   - Ensure JSON syntax is valid
+   - Check that all required fields are present
+
+3. **Connection Issues**
+   - Verify Atlas cluster is accessible
+   - Check API endpoints are reachable
+   - Test authentication credentials
 
 ## Next Steps
 
-1. **Add Lightning Processing**: Integrate with existing lightning alert system
-2. **Add Red Flag Processing**: Enhance with stream processing red flag calculations  
-3. **Add Aggregations**: Create hourly/daily weather summaries
-4. **Add Multiple Stations**: Extend to support multiple WeatherFlow stations
-5. **Add Alerting**: Implement stream-based weather alerts
+Start building your stream processing application:
+
+1. **Fork this repository** for your project
+2. **Update connections** with your data sources  
+3. **Create processors** for your specific use case
+4. **Test thoroughly** using the validation framework
+5. **Deploy and monitor** with the unified CLI tools
+
+This template provides everything you need to build robust, production-ready stream processing applications on MongoDB Atlas.
