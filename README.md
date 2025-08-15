@@ -323,13 +323,14 @@ Use `tools/sp` to deploy and monitor your processors in production.
 
 ### Common Issues
 
-**Config file not found:**
-```bash
-# The sp command automatically looks for config.txt in:
-# 1. ../config.txt (from tools/ directory)
-# 2. ./config.txt (from project root)
-# 3. config.txt (current directory)
-```
+## Troubleshooting
+
+### Getting Help
+
+1. Use `tools/sp --help` for command usage
+2. Check the JSON output for detailed error messages
+3. Review MongoDB Atlas Stream Processing logs in the UI
+4. Validate your JSON files with a JSON formatter
 
 **API authentication errors:**
 - Verify your Atlas API keys have Stream Processing permissions
