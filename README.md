@@ -133,6 +133,7 @@ Defines external connections for your stream processors to access data sources a
 Atlas Stream Processing supports connections to various platforms and services. For the complete list of supported connection types and their configuration options, see:
 
 - **[Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete Stream Processing reference including connections
+- **[Connection Registry Management](https://www.mongodb.com/docs/atlas/atlas-stream-processing/manage-connection-registry/#manage-connections)** - How to manage and configure connections
 - **[MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)** - Full Atlas platform documentation
 
 Common connection types include databases, message queues, REST APIs, cloud storage, and streaming platforms.
@@ -184,7 +185,8 @@ Each processor is a JSON file defining a complete stream processing pipeline. At
 Atlas Stream Processing supports hundreds of operators and stages. Rather than limiting yourself to a small subset, explore the full capabilities:
 
 - **[Official Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete reference for all stages and operators
-- **[Aggregation Pipeline Reference](https://www.mongodb.com/docs/manual/aggregation/)** - All MongoDB aggregation stages work in stream processing
+- **[Stream Aggregation Pipeline](https://www.mongodb.com/docs/atlas/atlas-stream-processing/stream-aggregation/)** - Stream processing aggregation stages
+- **[Stream Aggregation Expressions](https://www.mongodb.com/docs/atlas/atlas-stream-processing/stream-aggregation-expression/)** - Expressions for stream processing
 - **[MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)** - Complete Atlas platform documentation
 
 **Common Patterns:**
@@ -316,12 +318,6 @@ Update the `$match` and `$addFields` stages to implement your business rules.
 
 ### 4. Deploy and Monitor
 Use `tools/sp` to deploy and monitor your processors in production.
-
-## MongoDB Stream Processing Resources
-
-- [Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/stream-processing/)
-- [Pipeline Stage Reference](https://www.mongodb.com/docs/atlas/stream-processing/pipeline-stages/)
-- [Connection Types Guide](https://www.mongodb.com/docs/atlas/stream-processing/connections/)
 
 ## Troubleshooting
 
