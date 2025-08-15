@@ -132,8 +132,8 @@ Defines external connections for your stream processors to access data sources a
 
 Atlas Stream Processing supports connections to various platforms and services. For the complete list of supported connection types and their configuration options, see:
 
-- **[Stream Processing Connection Types](https://www.mongodb.com/docs/atlas/atlas-sp/connections/)** - Complete reference for all supported connections
-- **[Connection Configuration Guide](https://www.mongodb.com/docs/atlas/atlas-sp/manage-connections/)** - How to configure different connection types
+- **[Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete Stream Processing reference including connections
+- **[MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)** - Full Atlas platform documentation
 
 Common connection types include databases, message queues, REST APIs, cloud storage, and streaming platforms.
 
@@ -185,7 +185,7 @@ Atlas Stream Processing supports hundreds of operators and stages. Rather than l
 
 - **[Official Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete reference for all stages and operators
 - **[Aggregation Pipeline Reference](https://www.mongodb.com/docs/manual/aggregation/)** - All MongoDB aggregation stages work in stream processing
-- **[Stream Processing Specific Stages](https://www.mongodb.com/docs/atlas/atlas-sp/pipeline-stages/)** - Streaming-specific operations like `$source`, `$emit`, `$merge`
+- **[MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)** - Complete Atlas platform documentation
 
 **Common Patterns:**
 - **Data Ingestion**: `$source` → transformations → `$merge`
