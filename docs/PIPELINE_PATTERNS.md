@@ -31,9 +31,9 @@ Before implementing any pattern, consult the latest documentation:
 
 ## Common Pipeline Patterns
 
-### 1. Basic Data Ingestion
+### 1. Basic Data Ingestion with Filtering
 
-**Use Case**: Simple data collection from external APIs or sample streams
+**Use Case**: Simple data collection with basic filtering to remove inactive or invalid records
 
 ```json
 {
@@ -45,9 +45,9 @@ Before implementing any pattern, consult the latest documentation:
       }
     },
     {
-      "$addFields": {
-        "ingestion_timestamp": "$$NOW",
-        "processor_id": "data_ingestion_v1"
+      "$match": {
+        "status": {"$ne": "inactive"},
+        "temperature": {"$gt": 0}
       }
     },
     {
