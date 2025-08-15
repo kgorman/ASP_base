@@ -14,7 +14,7 @@ A complete toolkit and template for building MongoDB Atlas Stream Processing app
 ## Project Structure
 
 ```
-atlas_stream_processing/
+ASP_base/
 ├── config.txt                 # Atlas API credentials and configuration
 ├── connections/               # Connection definitions (databases, APIs, etc.)
 │   └── connections.json      
@@ -108,7 +108,7 @@ SP_INSTANCE_NAME=your_stream_processing_instance_name
 
 ### Connection Definitions (`connections/connections.json`)
 
-Defines external connections (databases, APIs, external services):
+Defines external connections for your stream processors to access data sources and destinations. Atlas Stream Processing supports many connection types for different platforms and services.
 
 ```json
 {
@@ -128,10 +128,14 @@ Defines external connections (databases, APIs, external services):
 }
 ```
 
-**Connection Types:**
+**Connection Types Available:**
 
-- **Https**: External REST APIs
-- **Cluster**: MongoDB Atlas clusters
+Atlas Stream Processing supports connections to various platforms and services. For the complete list of supported connection types and their configuration options, see:
+
+- **[Stream Processing Connection Types](https://www.mongodb.com/docs/atlas/atlas-sp/connections/)** - Complete reference for all supported connections
+- **[Connection Configuration Guide](https://www.mongodb.com/docs/atlas/atlas-sp/manage-connections/)** - How to configure different connection types
+
+Common connection types include databases, message queues, REST APIs, cloud storage, and streaming platforms.
 
 **Variable Substitution**: Use `${VARIABLE_NAME}` to reference values from `config.txt`
 
@@ -163,12 +167,6 @@ Each processor is a JSON file defining a complete stream processing pipeline. At
       }
     },
     {
-      "$addFields": {
-        "processed_at": "$$NOW",
-        "_ts": "$$NOW"
-      }
-    },
-    {
       "$merge": {
         "into": {
           "connectionName": "atlas_cluster",
@@ -185,9 +183,9 @@ Each processor is a JSON file defining a complete stream processing pipeline. At
 
 Atlas Stream Processing supports hundreds of operators and stages. Rather than limiting yourself to a small subset, explore the full capabilities:
 
-- **📚 [Official Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete reference for all stages and operators
-- **📖 [Aggregation Pipeline Reference](https://www.mongodb.com/docs/manual/aggregation/)** - All MongoDB aggregation stages work in stream processing
-- **🔧 [Stream Processing Specific Stages](https://www.mongodb.com/docs/atlas/atlas-sp/pipeline-stages/)** - Streaming-specific operations like `$source`, `$emit`, `$merge`
+- **[Official Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete reference for all stages and operators
+- **[Aggregation Pipeline Reference](https://www.mongodb.com/docs/manual/aggregation/)** - All MongoDB aggregation stages work in stream processing
+- **[Stream Processing Specific Stages](https://www.mongodb.com/docs/atlas/atlas-sp/pipeline-stages/)** - Streaming-specific operations like `$source`, `$emit`, `$merge`
 
 **Common Patterns:**
 - **Data Ingestion**: `$source` → transformations → `$merge`
@@ -663,3 +661,10 @@ Start building your stream processing application:
 5. **Deploy and monitor** with the unified CLI tools
 
 This template provides everything you need to build robust, production-ready stream processing applications on MongoDB Atlas.
+
+---
+
+## Project Attribution
+
+This project was primarily generated using AI assistance  
+Human review and modifications applied
