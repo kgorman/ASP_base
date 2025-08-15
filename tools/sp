@@ -1,0 +1,564 @@
+#!/usr/bin/env python3
+"""
+SP - Stream Processors CLI
+Unified tool for WeatherFlow Atlas Stream Processing management
+"""
+
+import argparse
+import json
+import sys
+import time
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+
+from atlas_api import AtlasStreamProcessingAPI, colorize_json
+
+
+def create_connections(api, config_dir="../"):
+    """Create connections from connections.json files"""
+    timestamp = datetime.now(timezone.utc).isoformat()
+    result = {
+        "timestamp": timestamp,
+        "operation": "create_connections",
+        "summary": {"total": 0, "success": 0, "failed": 0},
+        "connections": []
+    }
+    
+    # Look for connections.json files
+    connections_dir = Path(config_dir) / "connections"
+    connections_file = Path(config_dir) / "connections.json"
+    
+    connections_files = []
+    if connections_dir.exists():
+        connections_files.extend(connections_dir.glob("*.json"))
+    if connections_file.exists():
+        connections_files.append(connections_file)
+    
+    if not connections_files:
+        result["connections"].append({
+            "error": "No connections.json files found",
+            "searched_paths": [str(connections_dir), str(connections_file)]
+        })
+        return result
+    
+    for conn_file in connections_files:
+        try:
+            with open(conn_file, 'r') as f:
+                connections_data = json.load(f)
+            
+            # Handle nested structure with "connections" key
+            if "connections" in connections_data:
+                connections_list = connections_data["connections"]
+            elif isinstance(connections_data, list):
+                connections_list = connections_data
+            else:
+                connections_list = [connections_data]
+            
+            for conn_data in connections_list:
+                result["summary"]["total"] += 1
+                
+                conn_type = conn_data.get("type", "").lower()
+                name = conn_data.get("name", "")
+                
+                if conn_type == "https":
+                    # Substitute variables in URL
+                    url = api._substitute_variables(conn_data.get("url", ""))
+                    conn_result = api.create_http_connection(name=name, url=url)
+                elif conn_type == "cluster":
+                    conn_result = api.create_cluster_connection(
+                        name=name,
+                        cluster_name=conn_data.get("clusterName", "")
+                    )
+                else:
+                    conn_result = {
+                        "name": name,
+                        "operation": "create_connection",
+                        "status": "failed",
+                        "message": f"Unsupported connection type: {conn_type}"
+                    }
+                
+                result["connections"].append(conn_result)
+                if conn_result.get("status") in ["created", "already_exists"]:
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+                    
+        except Exception as e:
+            result["summary"]["total"] += 1
+            result["summary"]["failed"] += 1
+            result["connections"].append({
+                "file": str(conn_file),
+                "operation": "create_connection",
+                "status": "failed",
+                "message": f"Error reading file: {str(e)}"
+            })
+    
+    return result
+
+
+def create_processors(api, config_dir="../", processor_name=None):
+    """Create processors from processors/ directory JSON files"""
+    timestamp = datetime.now(timezone.utc).isoformat()
+    result = {
+        "timestamp": timestamp,
+        "operation": "create_processors",
+        "summary": {"total": 0, "success": 0, "failed": 0},
+        "processors": []
+    }
+    
+    processors_dir = Path(config_dir) / "processors"
+    
+    if not processors_dir.exists():
+        result["processors"].append({
+            "error": f"Processors directory not found: {processors_dir}",
+            "operation": "create_processors",
+            "status": "failed"
+        })
+        return result
+    
+    # Filter processor files based on processor_name if specified
+    if processor_name:
+        processor_files = [processors_dir / f"{processor_name}.json"]
+        # Check if the specific file exists
+        if not processor_files[0].exists():
+            result["processors"].append({
+                "error": f"Processor file not found: {processor_files[0]}",
+                "operation": "create_processor",
+                "status": "failed"
+            })
+            return result
+    else:
+        processor_files = list(processors_dir.glob("*.json"))
+    
+    if not processor_files:
+        result["processors"].append({
+            "error": f"No JSON files found in {processors_dir}",
+            "operation": "create_processors", 
+            "status": "failed"
+        })
+        return result
+    
+    for proc_file in processor_files:
+        try:
+            with open(proc_file, 'r') as f:
+                processor_data = json.load(f)
+            
+            result["summary"]["total"] += 1
+            
+            # Extract processor name from filename (remove .json extension)
+            processor_name = proc_file.stem
+            
+            # Get pipeline and options from JSON
+            pipeline = processor_data.get("pipeline", [])
+            options = processor_data.get("options")
+            
+            if not pipeline:
+                proc_result = {
+                    "name": processor_name,
+                    "file": str(proc_file),
+                    "operation": "create_processor",
+                    "status": "failed",
+                    "message": "No pipeline found in JSON file"
+                }
+            else:
+                proc_result = api.create_processor_from_json(
+                    name=processor_name,
+                    pipeline=pipeline,
+                    options=options
+                )
+                proc_result["file"] = str(proc_file)
+            
+            result["processors"].append(proc_result)
+            if proc_result.get("status") == "created":
+                result["summary"]["success"] += 1
+            else:
+                result["summary"]["failed"] += 1
+                
+        except Exception as e:
+            result["summary"]["total"] += 1
+            result["summary"]["failed"] += 1
+            result["processors"].append({
+                "name": proc_file.stem,
+                "file": str(proc_file),
+                "operation": "create_processor",
+                "status": "failed",
+                "message": f"Error reading file: {str(e)}"
+            })
+    
+    return result
+
+
+def test_processors(processor_name=None):
+    """Test processor JSON files for validation"""
+    timestamp = datetime.now(timezone.utc).isoformat()
+    
+    # Use the test runner script
+    test_script = Path(__file__).parent.parent / "tests" / "test_runner.py"
+    
+    if not test_script.exists():
+        return {
+            "timestamp": timestamp,
+            "operation": "test",
+            "error": f"Test script not found: {test_script}",
+            "message": "Run from the tools/ directory or ensure tests/test_runner.py exists"
+        }
+    
+    try:
+        # Build command - no need for --json since it's now the default
+        cmd = [sys.executable, str(test_script)]
+        if processor_name:
+            cmd.extend(["--processor", processor_name])
+        
+        # Run the test script
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=test_script.parent.parent)
+        
+        # Since test_runner.py already outputs colorized JSON, just return it directly
+        if result.returncode == 0:
+            # The output is already colorized JSON, so we just need to print it
+            # and return a simple success indicator for the sp command
+            print(result.stdout)
+            return {
+                "timestamp": timestamp,
+                "operation": "test",
+                "success": True,
+                "message": "Test completed successfully"
+            }
+        else:
+            # Handle error case - test_runner.py failed
+            print(result.stdout if result.stdout else result.stderr)
+            return {
+                "timestamp": timestamp,
+                "operation": "test",
+                "success": False,
+                "exit_code": result.returncode,
+                "error": "Test validation failed"
+            }
+        
+    except Exception as e:
+        return {
+            "timestamp": timestamp,
+            "operation": "test",
+            "error": str(e),
+            "success": False
+        }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="SP - Stream Processors CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    
+    # Processor management commands
+    list_parser = subparsers.add_parser("list", help="List processor status")
+    list_parser.add_argument("-p", "--processor", help="Show status for specific processor only")
+    
+    stats_parser = subparsers.add_parser("stats", help="Show processor statistics")
+    stats_parser.add_argument("-p", "--processor", help="Show stats for specific processor only")
+    
+    start_parser = subparsers.add_parser("start", help="Start processors")
+    start_parser.add_argument("-p", "--processor", help="Start specific processor only")
+    
+    stop_parser = subparsers.add_parser("stop", help="Stop processors")
+    stop_parser.add_argument("-p", "--processor", help="Stop specific processor only")
+    
+    restart_parser = subparsers.add_parser("restart", help="Restart processors")
+    restart_parser.add_argument("-p", "--processor", help="Restart specific processor only")
+    
+    drop_parser = subparsers.add_parser("drop", help="Drop (delete) processors")
+    drop_parser.add_argument("processor_name", nargs="?", help="Processor name to drop (if not specified, drops all processors)")
+    drop_parser.add_argument("--all", action="store_true", help="Drop all processors")
+    drop_parser.add_argument("-p", "--processor", help="Drop specific processor only")
+    
+    # Create commands
+    create_parser = subparsers.add_parser("create", help="Create connections or processors")
+    create_subparsers = create_parser.add_subparsers(dest="create_type", help="What to create")
+    
+    create_conn_parser = create_subparsers.add_parser("connections", help="Create connections from JSON files")
+    create_conn_parser.add_argument("-p", "--processor", help="Not applicable for connections (ignored)")
+    
+    create_proc_parser = create_subparsers.add_parser("processors", help="Create processors from JSON files")
+    create_proc_parser.add_argument("-p", "--processor", help="Create specific processor only")
+    
+    # Test command
+    test_parser = subparsers.add_parser("test", help="Validate processor JSON files")
+    test_parser.add_argument("-p", "--processor", help="Test specific processor only")
+    
+    # Global options
+    parser.add_argument("--config", default="../config.txt",
+                       help="Atlas API configuration file path (default: ../config.txt)")
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+    
+    try:
+        # Smart config file detection - look for config.txt in common locations
+        config_file = args.config
+        if config_file == "../config.txt":
+            # Default path - try different locations
+            possible_paths = ["../config.txt", "./config.txt", "config.txt"]
+            for path in possible_paths:
+                if Path(path).exists():
+                    config_file = path
+                    break
+        
+        api = AtlasStreamProcessingAPI(config_file)
+    except (FileNotFoundError, ValueError) as e:
+        error_result = {
+            "error": str(e),
+            "message": "Please check your configuration file"
+        }
+        print(colorize_json(error_result))
+        sys.exit(1)
+    
+    # Handle create commands
+    if args.command == "create":
+        if not args.create_type:
+            create_parser.print_help()
+            sys.exit(1)
+        
+        if args.create_type == "connections":
+            # Adjust path since we're running from tools/ directory
+            config_dir = "../" if Path("../connections").exists() else "./"
+            result = create_connections(api, config_dir)
+            print(colorize_json(result))
+        elif args.create_type == "processors":
+            # Adjust path since we're running from tools/ directory  
+            config_dir = "../" if Path("../processors").exists() else "./"
+            result = create_processors(api, config_dir, args.processor)
+            print(colorize_json(result))
+        return
+    
+    # Handle processor management commands
+    if args.command == "list":
+        if args.processor:
+            # List specific processor
+            result = api.get_single_processor_status(args.processor)
+        else:
+            # List all processors
+            result = api.get_processor_status()
+        print(colorize_json(result))
+        
+    elif args.command == "stats":
+        if args.processor:
+            # Stats for specific processor
+            result = api.get_single_processor_stats(args.processor)
+        else:
+            # Stats for all processors
+            result = api.get_processor_stats()
+        print(colorize_json(result))
+            
+    elif args.command == "start":
+        if args.processor:
+            # Start specific processor
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "start",
+                "summary": {"total": 1, "success": 0, "failed": 0},
+                "processors": []
+            }
+            proc_result = api.start_processor(args.processor)
+            result["processors"].append(proc_result)
+            if proc_result["status"] == "started":
+                result["summary"]["success"] += 1
+            else:
+                result["summary"]["failed"] += 1
+        else:
+            # Start all processors
+            processors = api.list_processors()
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "start",
+                "summary": {"total": len(processors), "success": 0, "failed": 0},
+                "processors": []
+            }
+            
+            for processor in processors:
+                proc_result = api.start_processor(processor["name"])
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "started":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+        
+        print(colorize_json(result))
+            
+    elif args.command == "stop":
+        if args.processor:
+            # Stop specific processor
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "stop",
+                "summary": {"total": 1, "success": 0, "failed": 0},
+                "processors": []
+            }
+            proc_result = api.stop_processor(args.processor)
+            result["processors"].append(proc_result)
+            if proc_result["status"] == "stopped":
+                result["summary"]["success"] += 1
+            else:
+                result["summary"]["failed"] += 1
+        else:
+            # Stop all processors
+            processors = api.list_processors()
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "stop",
+                "summary": {"total": len(processors), "success": 0, "failed": 0},
+                "processors": []
+            }
+            
+            for processor in processors:
+                proc_result = api.stop_processor(processor["name"])
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "stopped":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+        
+        print(colorize_json(result))
+            
+    elif args.command == "restart":
+        if args.processor:
+            # Restart specific processor
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "restart",
+                "summary": {"total": 2, "success": 0, "failed": 0},
+                "processors": []
+            }
+            
+            # Stop processor
+            proc_result = api.stop_processor(args.processor)
+            result["processors"].append(proc_result)
+            if proc_result["status"] == "stopped":
+                result["summary"]["success"] += 1
+            else:
+                result["summary"]["failed"] += 1
+            
+            # Wait a bit
+            time.sleep(2)
+            
+            # Start processor
+            proc_result = api.start_processor(args.processor)
+            result["processors"].append(proc_result)
+            if proc_result["status"] == "started":
+                result["summary"]["success"] += 1
+            else:
+                result["summary"]["failed"] += 1
+        else:
+            # Restart all processors
+            processors = api.list_processors()
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "restart",
+                "summary": {"total": len(processors) * 2, "success": 0, "failed": 0},
+                "processors": []
+            }
+            
+            # Stop all processors
+            for processor in processors:
+                proc_result = api.stop_processor(processor["name"])
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "stopped":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+            
+            # Wait a bit
+            time.sleep(2)
+            
+            # Start all processors
+            for processor in processors:
+                proc_result = api.start_processor(processor["name"])
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "started":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+        
+        print(colorize_json(result))
+    
+    elif args.command == "drop":
+        # Handle -p/--processor option first
+        if args.processor:
+            target_processor = args.processor
+        elif args.processor_name:
+            target_processor = args.processor_name
+        else:
+            target_processor = None
+            
+        if target_processor:
+            # Drop a specific processor
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "drop",
+                "summary": {"total": 1, "success": 0, "failed": 0},
+                "processors": []
+            }
+            
+            proc_result = api.delete_processor(target_processor)
+            result["processors"].append(proc_result)
+            if proc_result.get("status") == "deleted":
+                result["summary"]["success"] += 1
+            else:
+                result["summary"]["failed"] += 1
+            
+            print(colorize_json(result))
+            
+        elif args.all:
+            # Drop all processors
+            processors = api.list_processors()
+            timestamp = datetime.now(timezone.utc).isoformat()
+            result = {
+                "timestamp": timestamp,
+                "operation": "drop_all",
+                "summary": {"total": len(processors), "success": 0, "failed": 0},
+                "processors": []
+            }
+            
+            for processor in processors:
+                proc_result = api.delete_processor(processor["name"])
+                result["processors"].append(proc_result)
+                if proc_result.get("status") == "deleted":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+            
+            print(colorize_json(result))
+            
+        else:
+            # No processor name and no --all flag
+            error_result = {
+                "error": "Must specify either a processor name or use --all flag",
+                "usage": "sp drop <processor_name> OR sp drop --all OR sp drop -p <processor_name>",
+                "examples": [
+                    "sp drop solar_simple_processor",
+                    "sp drop -p solar_simple_processor",
+                    "sp drop --processor solar_simple_processor",
+                    "sp drop --all"
+                ]
+            }
+            print(colorize_json(error_result))
+            sys.exit(1)
+    
+    elif args.command == "test":
+        # Handle processor testing
+        result = test_processors(processor_name=args.processor)
+        
+        # The test function already prints the colorized output
+        # Just exit with the appropriate code
+        sys.exit(0 if result.get("success", False) else 1)
+
+
+if __name__ == "__main__":
+    main()

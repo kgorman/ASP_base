@@ -1,0 +1,28 @@
+{
+    "name": "test_emit_processor",
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "sample_stream_solar",
+                "timeField": { "$dateFromString": { "dateString": "$timestamp" }}
+            }
+        },
+        {
+            "$match": {
+                "obs.voltage": { "$gt": 12.5 }
+            }
+        },
+        {
+            "$addFields": {
+                "alert_type": "HIGH_VOLTAGE",
+                "processing_timestamp": "$$NOW"
+            }
+        },
+        {
+            "$emit": {
+                "connectionName": "atlas_cluster",
+                "to": "voltage_alerts"
+            }
+        }
+    ]
+}

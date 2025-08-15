@@ -1,0 +1,15 @@
+{
+  "connections": [
+    {
+      "name": "sample_stream_solar",
+      "type": "Sample",
+      "description": "MongoDB Atlas Stream Processing sample solar data stream"
+    },
+    {
+      "name": "atlas_cluster",
+      "type": "Cluster",
+      "clusterName": "YourClusterName",
+      "description": "MongoDB Atlas cluster connection for data storage (update clusterName to match your cluster)"
+    }
+  ]
+}

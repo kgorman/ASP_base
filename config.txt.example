@@ -1,0 +1,15 @@
+# MongoDB Atlas API Credentials
+# Get these from Atlas UI → Access Manager → API Keys
+PUBLIC_KEY=your_atlas_public_key_here
+PRIVATE_KEY=your_atlas_private_key_here
+
+# Atlas Project Information  
+# Get from Atlas UI → Project Settings → General
+PROJECT_ID=your_atlas_project_id_here
+
+# Stream Processing Instance Name
+# Get from Atlas UI → Stream Processing → Your instance name
+SP_INSTANCE_NAME=your_stream_processing_instance_name_here
+
+# WeatherFlow Configuration
+WEATHERFLOW_STATION_ID=111111
