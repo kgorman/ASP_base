@@ -153,14 +153,12 @@ The `sp` utility located in `tools/sp` is the **main command-line interface** fo
 }
 ```
 
-4. **Sample Data** (for testing)
-```json
-{
-  "name": "sample_stream",
-  "type": "Sample",
-  "subtype": "solar"
-}
-```
+4. **Sample Data** (built-in, no configuration needed)
+
+Atlas Stream Processing provides built-in sample streams like `sample_stream_solar` that are automatically available. These don't need to be defined in connections.json:
+
+- `sample_stream_solar` - Solar energy data for testing
+- Other sample streams may be available (check with `./tools/sp list`)
 
 ### Variable Substitution
 

@@ -114,11 +114,6 @@ Defines external connections for your stream processors to access data sources a
 {
   "connections": [
     {
-      "name": "sample_stream_solar",
-      "type": "Sample",
-      "description": "Sample solar data stream for testing"
-    },
-    {
       "name": "atlas_cluster",
       "type": "Cluster",
       "clusterName": "YourAtlasCluster",
@@ -348,8 +343,9 @@ Use `tools/sp` to deploy and monitor your processors in production.
 ### connections.json
 Defines Atlas Stream Processing connections:
 
-- **sample_stream_solar**: Sample data stream for solar/energy data
 - **atlas_cluster**: MongoDB Atlas cluster for data storage
+
+**Note**: The example processors use `sample_stream_solar` as their data source, which is a **built-in sample stream** provided by Atlas Stream Processing. Built-in streams don't need to be defined in connections.json and will appear automatically when you run `./tools/sp list`.
 
 ## Stream Processing Pipelines
 
