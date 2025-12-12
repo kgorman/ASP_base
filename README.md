@@ -1,303 +1,633 @@
 # Atlas Stream Processing Base
 
-A complete toolkit and template for building MongoDB Atlas Stream Processing applications. This repository provides a ready-to-use foundation with powerful command-line tools, structured configurations, and example processors to jumpstart your stream processing projects.
+A comprehensive GitOps-ready toolkit for MongoDB Atlas Stream Processing. This repository provides a complete foundation with powerful CLI tools, automated tier selection, performance profiling, and CI/CD integration for production stream processing pipelines.
 
-## What This Provides
+## 🚀 Key Features
 
-- **Complete development toolkit** with unified CLI for all Stream Processing operations
-- **Template structure** with example processors using sample solar data
-- **JSON-based configuration** for processors and connections
-- **Color-coded terminal output** for easy debugging and monitoring
-- **Production-ready structure** you can clone and customize for your own use cases
-- **Comprehensive testing framework** to validate your processors
+- **Complete CLI Toolkit** (`sp`) - Unified command-line tool for all Stream Processing operations
+- **GitOps Ready** - Full CI/CD integration with GitHub Actions workflows
+- **Performance Profiling** - Time-series monitoring with trend analysis and alerting
+- **Auto Tier Selection** - Intelligent tier recommendations based on processor complexity
+- **JSON Configuration** - Declarative processor and connection definitions
+- **Production Testing** - Comprehensive validation and performance comparison tools
+- **MongoDB Verification** - Authoritative connection testing with native drivers
 
-## Project Structure
+## 📋 What's Included
+
+### Core Tools
+- **SP CLI** (`tools/sp`) - Comprehensive command-line interface
+- **Atlas API Library** (`tools/atlas_api.py`) - Core API wrapper with profiling
+- **Performance Profiling** - Time-series monitoring with threshold alerting
+- **Tier Analysis** - Automated tier recommendations with complexity analysis
+
+### Configuration & Templates
+- **Processor Templates** - Example stream processing pipelines
+- **Connection Templates** - Database and API connection configurations
+- **CI/CD Workflows** - GitHub Actions for automated deployment
+- **Environment Configs** - Multi-environment setup (dev/staging/production)
+
+### Documentation
+- **[User Manual](docs/SP_USER_MANUAL.md)** - Complete CLI reference and examples
+- **[GitOps CI/CD Guide](docs/GITOPS_CICD_GUIDE.md)** - Production deployment workflows
+- **[Performance Analysis](docs/ATLAS_STREAM_PROCESSING_PARALLELISM.md)** - Tier optimization guide
+- **[Testing Guide](docs/TESTING_GUIDE.md)** - Validation and testing framework
+
+## 🏗️ Project Structure
 
 ```
 ASP_base/
-├── config.txt                 # Atlas API credentials and configuration
-├── connections/               # Connection definitions (databases, APIs, etc.)
-│   └── connections.json      
-├── processors/               # Stream processor pipeline definitions
+├── config.txt.example           # Atlas API credentials template
+├── connections/                 # Connection definitions
+│   ├── connections.json        # Database and API connections
+│   └── connections.json.example
+├── processors/                  # Stream processor definitions
+│   ├── solar_watts_boost_processor.json
 │   ├── solar_simple_processor.json
-│   └── test_emit_processor.json
-├── tests/                   # Validation and testing framework
-│   ├── test_processors.py
-│   ├── test_runner.py
-│   └── README.md
-└── tools/                   # Management utilities
-    ├── sp                   # Unified CLI tool (executable)
-    ├── atlas_api.py        # Core API library
-    └── requirements.txt    # Python dependencies
+│   └── *.json.example          # Template processors
+├── docs/                       # Comprehensive documentation
+│   ├── SP_USER_MANUAL.md      # Complete CLI reference
+│   ├── GITOPS_CICD_GUIDE.md   # GitOps deployment guide
+│   ├── ATLAS_STREAM_PROCESSING_PARALLELISM.md
+│   ├── TESTING_GUIDE.md       # Validation framework
+│   └── *.md                   # Additional guides
+├── test/                       # Testing framework
+│   ├── test_processors.py     # Processor validation
+│   ├── test_connections.py    # Connection testing
+│   └── requirements.txt       # Test dependencies
+└── tools/                      # Management toolkit
+    ├── sp                     # Main CLI tool (executable)
+    ├── atlas_api.py          # Core API with profiling
+    └── requirements.txt      # Tool dependencies
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **MongoDB Atlas Account**: Sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-- **Atlas API Keys**: Generate from Atlas UI → Access Manager → API Keys
-- **Python 3.7+** with `requests` library
+- **MongoDB Atlas Account** with Stream Processing enabled
+- **Atlas API Keys** (generate from Atlas UI → Access Manager → API Keys)  
+- **Python 3.7+** with pip
 
-### Setup and Initial Configuration
+### 1. Setup Repository
 
 ```bash
-# Option A: Clone this repository
-git clone <this-repo>
+# Clone this repository
+git clone https://github.com/kgorman/ASP_base.git
 cd ASP_base
+
+# Install dependencies
 pip install -r tools/requirements.txt
 
-# Option B: Create new repository from scratch
-curl -O https://raw.githubusercontent.com/kgorman/ASP_base/main/tools/create-repo-structure.sh
-chmod +x create-repo-structure.sh
-./create-repo-structure.sh my-stream-processing-project
-cd my-stream-processing-project
-pip install -r tools/requirements.txt
-
-# Configure Atlas credentials and connections
+# Configure credentials (never commit this file!)
 cp config.txt.example config.txt
-cp connections/connections.json.example connections/connections.json
-# Edit config.txt with your Atlas API keys and Project ID
-# Edit connections/connections.json with your actual connection details
+# Edit config.txt with your Atlas API keys and project ID
 ```
 
-### Create Your Stream Processing Instance
+### 2. Deploy Stream Processing
 
 ```bash
-# Navigate to tools directory
 cd tools/
 
-# List existing instances (if any)
-./sp instance list
+# Create Stream Processing workspace
+./sp workspaces create my-workspace
 
-# Create a new Stream Processing instance
-./sp instances create my-stream-instance
-
-# Update config.txt with your instance name
-# Add: SP_INSTANCE_NAME=my-stream-instance
-```
-
-### Deploy Connections and Processors
-
-```bash
-# Create connections on your instance
+# Deploy connections
 ./sp instances connections create
 
-# Create all processors from JSON definitions  
-./sp processors create
+# Deploy and start processors with auto-tier selection
+./sp processors create --all
+./sp processors start --auto
 
-# Start processing
-./sp processors start
+# Monitor performance
+./sp processors stats --verbose
+./sp processors profile --all --duration 300
+```
 
-# Monitor status
+### 3. Validate Deployment
+
+```bash
+# Check processor health
 ./sp processors list
-./sp processors stats
+
+# Get performance metrics
+./sp processors stats --all --verbose
+
+# Analyze tier utilization
+./sp processors tier-advise --all
+
+# Test end-to-end pipeline
+./sp instances connections test --require-mongodb
 ```
 
-## Complete Onboarding Example
+## 🎯 Core Capabilities
 
-Here's a complete walkthrough for a new user with just an Atlas account:
+### CLI Command Overview
 
 ```bash
-# 1. Set up the repository
-git clone <this-repo>
-cd ASP_base
-pip install -r tools/requirements.txt
+# Workspace Management
+./sp workspaces list                    # List all workspaces
+./sp workspaces create my-workspace     # Create new workspace
+./sp workspaces details my-workspace    # Get workspace details
 
-# 2. Configure basic Atlas credentials and connections
-cp config.txt.example config.txt
-cp connections/connections.json.example connections/connections.json
-# Edit config.txt - add PUBLIC_KEY, PRIVATE_KEY, PROJECT_ID only
-# Edit connections/connections.json - update clusterName to match your cluster
+# Connection Management
+./sp instances connections create       # Deploy all connections
+./sp instances connections list         # List connections
+./sp instances connections test         # Test with MongoDB verification
 
-# 3. Check existing instances
-cd tools/
-./sp instances list
+# Processor Management  
+./sp processors create --all           # Create all processors
+./sp processors start --auto           # Start with optimal tier selection
+./sp processors list                   # Show processor status
+./sp processors stats --verbose        # Detailed statistics
 
-# 4. Create new instance if needed
-./sp instances create my-app-stream-processor
-
-# 5. Add instance to config.txt
-# Edit config.txt - add SP_INSTANCE_NAME=my-app-stream-processor
-
-# 6. Deploy connections and processors
-./sp instances connections create
-./sp processors create
-
-# 7. Start processing
-./sp processors start
-
-# 8. Monitor your system
-./sp processors list
-./sp processors stats
+# Performance Analysis
+./sp processors tier-advise --all      # Get tier recommendations
+./sp processors profile --all          # Performance profiling
+./sp processors profile -p my_processor --continuous  # Live monitoring
 ```
 
-**What this provides:**
-- Complete Stream Processing environment from scratch
-- Production-ready instance configuration  
-- Sample processors running on real data
-- Full monitoring and management capabilities
-
-## Configuration
-
-### Atlas API Configuration (`config.txt`)
-
-This file contains your MongoDB Atlas credentials and project information. To get started, you only need the API keys and Project ID:
+### Performance Profiling & Monitoring
 
 ```bash
-# MongoDB Atlas API Credentials  
-PUBLIC_KEY=your_atlas_public_key
-PRIVATE_KEY=your_atlas_private_key
-PROJECT_ID=your_atlas_project_id
+# Time-series profiling with trend analysis
+./sp processors profile --all --duration 300 --interval 30
 
-# Stream Processing Instance Name (add after creating instance)
-SP_INSTANCE_NAME=your_stream_processing_instance_name
+# Continuous monitoring with threshold alerts
+./sp processors profile --all --continuous --thresholds alerts.json
+
+# Performance comparison across tiers
+./sp processors start -p my_processor -t SP10
+./sp processors profile -p my_processor --duration 120 --output sp10.json
+./sp processors restart -p my_processor -t SP30  
+./sp processors profile -p my_processor --duration 120 --output sp30.json
+
+# Tier optimization recommendations
+./sp processors tier-advise --all
 ```
 
-**How to get these values:**
+## 🔧 GitOps & CI/CD Integration
 
-1. **Atlas API Keys**: Atlas UI → Access Manager → API Keys → Create API Key
-2. **Project ID**: Atlas UI → Project Settings → General  
-3. **SP Instance Name**: Created using `./sp instances create <name>` command
+### GitHub Actions Workflow Example
 
-**Getting Started Workflow:**
+```yaml
+name: Stream Processing CI/CD
+on:
+  push:
+    branches: [main]
+    paths: ['processors/**']
 
-1. Set up `PUBLIC_KEY`, `PRIVATE_KEY`, and `PROJECT_ID` in config.txt
-2. Use `./sp instances list` to see existing instances (if any)
-3. Use `./sp instances create <name>` to create a new instance  
-4. Add `SP_INSTANCE_NAME=<your-instance-name>` to config.txt
-5. Start deploying connections and processors
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test Configurations
+        run: |
+          cd tools
+          ./sp processors test --all
+          ./sp processors tier-advise --all
+      
+      - name: Deploy to Production
+        env:
+          ATLAS_PUBLIC_KEY: ${{ secrets.ATLAS_PUBLIC_KEY }}
+          ATLAS_PRIVATE_KEY: ${{ secrets.ATLAS_PRIVATE_KEY }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+        run: |
+          echo "PUBLIC_KEY=$ATLAS_PUBLIC_KEY" > config.txt
+          echo "PRIVATE_KEY=$ATLAS_PRIVATE_KEY" >> config.txt  
+          echo "PROJECT_ID=$PROJECT_ID" >> config.txt
+          cd tools
+          ./sp processors create --all
+          ./sp processors start --auto
+          ./sp processors profile --all --duration 120
+```
 
-### Connection Definitions (`connections/connections.json`)
+### Key GitOps Features
 
-Defines external connections for your stream processors to access data sources and destinations. Atlas Stream Processing supports many connection types for different platforms and services.
+- ✅ **Declarative Configuration** - All processors defined as JSON in Git
+- ✅ **Automated Testing** - Validation on every commit  
+- ✅ **Performance Baselines** - Track performance over time
+- ✅ **Auto Tier Selection** - Optimal resource allocation
+- ✅ **Rollback Ready** - Instant rollback via Git history
 
-**Quick Start**: Copy the example file and customize:
+See **[GitOps CI/CD Guide](docs/GITOPS_CICD_GUIDE.md)** for complete implementation details.
+
+## 📊 Performance Features
+
+### Intelligent Tier Selection
+The SP tool automatically analyzes processor complexity and recommends optimal tiers:
+
 ```bash
-cp connections/connections.json.example connections/connections.json
-# Edit connections.json with your actual connection details
+./sp processors tier-advise -p complex_analytics
+# Returns: SP30 recommended (Parallelism: 8, Complex operations: 4)
+
+./sp processors start -p complex_analytics --auto
+# Automatically starts on SP30
 ```
 
-**Note**: The example file uses variable substitution (e.g., `${KAFKA_USERNAME}`, `${AWS_ROLE_ARN}`) for sensitive data. Add these variables to your `config.txt` file as needed for your specific connection types.
+### Real-time Monitoring
+```bash
+# Live performance monitoring
+./sp processors profile --all --continuous --interval 15
+
+# Sample Output:
+# === Sample 1 (15s elapsed) ===  
+# analytics_processor: Memory: 245.2MB, Latency: p50=12.3ms, Throughput: 1,847/sec
+# enrichment_processor: Memory: 156.7MB, Latency: p50=8.9ms, Throughput: 2,103/sec
+```
+
+### Performance Analysis
+- **Time-series Monitoring** - Track metrics over time with trend analysis
+- **Threshold Alerting** - Automated alerts when metrics exceed limits
+- **Tier Comparison** - A/B testing across different tier configurations
+- **Bottleneck Identification** - Per-operator latency and throughput analysis
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[SP User Manual](docs/SP_USER_MANUAL.md)** | Complete CLI reference with examples |
+| **[GitOps CI/CD Guide](docs/GITOPS_CICD_GUIDE.md)** | Production deployment workflows |
+| **[Parallelism Guide](docs/ATLAS_STREAM_PROCESSING_PARALLELISM.md)** | Tier optimization and scaling |
+| **[Testing Guide](docs/TESTING_GUIDE.md)** | Validation framework and best practices |
+| **[Connection Testing](docs/SP_CONNECTION_TESTING.md)** | MongoDB verification procedures |
+
+## 🛠️ Advanced Usage
+
+### Custom Processor Development
 
 ```json
 {
-  "connections": [
-    {
-      "name": "atlas_cluster",
-      "type": "Cluster",
-      "clusterName": "YourAtlasCluster",
-      "description": "MongoDB Atlas cluster for data storage"
-    }
-  ]
-}
-```
-
-**Connection Types Available:**
-
-Atlas Stream Processing supports connections to various platforms and services. For the complete list of supported connection types and their configuration options, see:
-
-- **[Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete Stream Processing reference including connections
-- **[Connection Registry Management](https://www.mongodb.com/docs/atlas/atlas-stream-processing/manage-connection-registry/#manage-connections)** - How to manage and configure connections
-- **[MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)** - Full Atlas platform documentation
-
-Common connection types include databases, message queues, REST APIs, cloud storage, and streaming platforms.
-
-**Example Connection Types in connections.json.example:**
-
-- **Cluster**: MongoDB Atlas cluster connections with role-based access
-- **Https**: REST API endpoints with authentication headers  
-- **Kafka**: Apache Kafka and Confluent Cloud streaming platforms
-  - Basic Kafka cluster with SASL_SSL authentication
-  - Confluent Cloud managed Kafka with API key authentication
-- **S3**: AWS S3 buckets for data archival and analytics with IAM role-based access
-
-**Variable Substitution**: Use `${VARIABLE_NAME}` to reference values from `config.txt`
-
-### Processor Definitions (`processors/*.json`)
-
-Each processor is a JSON file defining a complete stream processing pipeline. Atlas Stream Processing supports the full MongoDB aggregation pipeline syntax plus streaming-specific stages.
-
-**Quick Start**: Copy example files and customize:
-```bash
-cp processors/solar_simple_processor.json.example processors/my_processor.json
-# Edit my_processor.json with your specific pipeline logic
-```
-
-**Example Files Available**: The repository includes `.json.example` files that show anonymized processor configurations. These use placeholder values like `YourClusterConnection` and `your_database` that you can customize for your environment.
-
-**Required Structure:**
-```json
-{
-  "name": "your_processor_name",
-  "pipeline": [
-    // Your aggregation pipeline stages here
-  ],
-  "options": {
-    // Optional configuration like DLQ, etc.
-  }
-}
-```
-
-**Example - Basic Data Processing:**
-```json
-{
-  "name": "solar_data_processor",
-  "pipeline": [
-    {
-      "$source": {
-        "connectionName": "sample_stream_solar"
-      }
-    },
-    {
-      "$merge": {
-        "into": {
-          "connectionName": "atlas_cluster",
-          "db": "solar",
-          "coll": "processed_data"
+    "name": "custom_analytics_processor",
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "data_stream",
+                "timeField": { "$dateFromString": { "dateString": "$timestamp" }}
+            }
+        },
+        {
+            "$addFields": {
+                "processed_value": {
+                    "$function": {
+                        "body": "function(input) { return input * 1.5 + Math.random(); }",
+                        "args": ["$raw_value"],
+                        "lang": "js"
+                    }
+                }
+            }
+        },
+        {
+            "$merge": {
+                "into": {
+                    "connectionName": "analytics_output",
+                    "db": "analytics",
+                    "coll": "processed_data"
+                },
+                "parallelism": 12
+            }
         }
-      }
-    }
-  ]
+    ]
 }
 ```
 
-**Building Your Pipelines:**
-
-Atlas Stream Processing supports hundreds of operators and stages. Rather than limiting yourself to a small subset, explore the full capabilities:
-
-- **[Official Atlas Stream Processing Documentation](https://www.mongodb.com/docs/atlas/atlas-sp/)** - Complete reference for all stages and operators
-- **[Stream Aggregation Pipeline](https://www.mongodb.com/docs/atlas/atlas-stream-processing/stream-aggregation/)** - Stream processing aggregation stages
-- **[Stream Aggregation Expressions](https://www.mongodb.com/docs/atlas/atlas-stream-processing/stream-aggregation-expression/)** - Expressions for stream processing
-- **[MongoDB Atlas Documentation](https://www.mongodb.com/docs/atlas/)** - Complete Atlas platform documentation
-
-**Common Patterns:**
-- **Data Ingestion**: `$source` → transformations → `$merge`
-- **Real-time Analytics**: `$source` → `$match` → aggregations → `$emit`  
-- **ETL Processing**: `$source` → complex transformations → multiple outputs
-- **Alerting**: `$source` → `$match` conditions → `$emit` notifications
-
-The examples in this repository show basic patterns, but your processors can be as simple or complex as your use case requires. Use the official documentation to discover the right stages for your specific needs.
-
-## Tools/SP Command Reference
-
-The `tools/sp` command is your main interface for managing Stream Processing:
-
-### Instance Management
+### Multi-Environment Configuration
 
 ```bash
-# List all Stream Processing instances in your project
-tools/sp instances list
+# Development
+./sp processors start --all-tier SP10
 
-# Create a new Stream Processing instance
-tools/sp instances create <instance-name>
-tools/sp instances create my-instance --cloud-provider AWS --region US_EAST_1
+# Staging  
+./sp processors start --all-tier SP30
 
-# Get details of a specific instance  
-tools/sp instances details <instance-name>
+# Production with auto-optimization
+./sp processors start --auto
+```
 
-# Delete an instance (warning: this removes all processors!)
-tools/sp instances delete <instance-name>
+## 🎯 Use Cases
+
+- **Real-time Analytics** - Process streaming data with automatic scaling
+- **Data Enrichment** - Enhance incoming data with computed fields
+- **Alert Systems** - Monitor streams and trigger notifications
+- **ETL Pipelines** - Transform and load data across systems
+- **IoT Processing** - Handle sensor data streams at scale
+
+## 🤝 Contributing
+
+This toolkit is designed to be:
+- **Cloned and Customized** for your specific use cases
+- **Extended** with additional processors and connections  
+- **Integrated** into your existing CI/CD workflows
+- **Shared** as a foundation for stream processing projects
+
+See the comprehensive documentation for detailed implementation guidance.
+
+## 📄 Processor Definition: The Core Concept
+
+### Understanding Processor Files
+
+**Key Principle**: In this toolkit, **processors are files**. Each `.json` file in the `processors/` directory represents a complete, self-contained stream processing pipeline that can be deployed to Atlas Stream Processing.
+
+This file-based approach provides:
+- ✅ **Version Control** - Every processor change is tracked in Git
+- ✅ **Reproducibility** - Identical deployments across environments  
+- ✅ **Portability** - Easy to copy, share, and template
+- ✅ **GitOps Ready** - Direct integration with CI/CD workflows
+
+### Canonical Processor Structure
+
+Every processor file follows this canonical JSON structure:
+
+```json
+{
+    "name": "processor_name",
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "input_connection",
+                "timeField": { "$dateFromString": { "dateString": "$timestamp" }}
+            }
+        },
+        {
+            "$addFields": {
+                "computed_field": {
+                    "$multiply": ["$value", 1.5]
+                }
+            }
+        },
+        {
+            "$merge": {
+                "into": {
+                    "connectionName": "output_connection",
+                    "db": "analytics",
+                    "coll": "processed_data"
+                }
+            }
+        }
+    ]
+}
+```
+
+### File-to-Deployment Mapping
+
+```mermaid
+graph LR
+    A[processors/my_analytics.json] --> B[./sp processors create]
+    B --> C[Atlas Stream Processing API]
+    C --> D[Running Processor in Atlas]
+    
+    E[Git Commit] --> F[CI/CD Pipeline]
+    F --> B
+```
+
+**The Process:**
+1. **Create/Edit** processor file locally: `processors/analytics_pipeline.json`
+2. **Deploy** with SP tool: `./sp processors create -p analytics_pipeline`
+3. **Start** processing: `./sp processors start -p analytics_pipeline --auto`
+4. **Monitor** performance: `./sp processors profile -p analytics_pipeline`
+
+### Detailed Processor Anatomy
+
+#### 1. **Processor Metadata**
+```json
+{
+    "name": "solar_analytics_processor",  // Unique identifier
+    // Pipeline definition follows...
+}
+```
+- **Name**: Must be unique within your Atlas project
+- **File Name**: Should match processor name (e.g., `solar_analytics_processor.json`)
+
+#### 2. **Pipeline Stages**
+The `pipeline` array contains ordered stages that process streaming data:
+
+```json
+"pipeline": [
+    // Stage 1: Data Input
+    {
+        "$source": {
+            "connectionName": "live_sensor_data",
+            "timeField": { "$dateFromString": { "dateString": "$ts" }}
+        }
+    },
+    
+    // Stage 2: Data Filtering  
+    {
+        "$match": {
+            "sensor_type": "temperature",
+            "value": { "$gt": 0 }
+        }
+    },
+    
+    // Stage 3: Data Transformation
+    {
+        "$addFields": {
+            "celsius": {
+                "$divide": [
+                    { "$subtract": ["$fahrenheit", 32] },
+                    1.8
+                ]
+            },
+            "processed_at": { "$now": {} }
+        }
+    },
+    
+    // Stage 4: Data Output
+    {
+        "$merge": {
+            "into": {
+                "connectionName": "analytics_db",
+                "db": "sensors", 
+                "coll": "temperature_readings"
+            },
+            "parallelism": 8  // Optional performance optimization
+        }
+    }
+]
+```
+
+#### 3. **Stage Types Explained**
+
+**Input Stages:**
+- `$source` - Read from data streams, databases, APIs
+- `$lookup` - Join with reference data
+
+**Processing Stages:**
+- `$match` - Filter data based on conditions
+- `$addFields` - Compute new fields with expressions  
+- `$project` - Select and reshape fields
+- `$group` - Aggregate data over time windows
+- `$unwind` - Flatten arrays for processing
+
+**Output Stages:**
+- `$merge` - Write to databases with upsert logic
+- `$emit` - Send to external systems or APIs
+- `$out` - Replace collection contents
+
+**Advanced Stages:**
+- `$function` - Custom JavaScript processing
+- `$unionWith` - Combine multiple data streams
+- `$densify` - Fill gaps in time-series data
+
+### File Management Workflow
+
+#### Creating New Processors
+
+```bash
+# 1. Create processor file
+cat > processors/user_activity_analytics.json << 'EOF'
+{
+    "name": "user_activity_analytics", 
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "user_events_stream"
+            }
+        },
+        {
+            "$addFields": {
+                "session_duration": {
+                    "$subtract": ["$logout_time", "$login_time"]
+                }
+            }
+        },
+        {
+            "$merge": {
+                "into": {
+                    "connectionName": "analytics_cluster",
+                    "db": "user_analytics",
+                    "coll": "sessions"
+                }
+            }
+        }
+    ]
+}
+EOF
+
+# 2. Test the configuration
+cd tools && ./sp processors test -p user_activity_analytics
+
+# 3. Deploy to Atlas
+./sp processors create -p user_activity_analytics
+
+# 4. Start processing with optimal tier
+./sp processors start -p user_activity_analytics --auto
+```
+
+#### Modifying Existing Processors
+
+```bash
+# 1. Edit the JSON file
+vim processors/user_activity_analytics.json
+
+# 2. Test changes
+cd tools && ./sp processors test -p user_activity_analytics
+
+# 3. Redeploy (stop -> drop -> recreate -> start)
+./sp processors stop -p user_activity_analytics
+./sp processors drop -p user_activity_analytics  
+./sp processors create -p user_activity_analytics
+./sp processors start -p user_activity_analytics --auto
+```
+
+#### Version Control Best Practices
+
+```bash
+# Commit processor changes with descriptive messages
+git add processors/user_activity_analytics.json
+git commit -m "Add session duration calculation to user analytics processor"
+
+# Use branches for testing new processor logic
+git checkout -b feature/enhanced-user-analytics
+# ... modify processor ...
+git commit -m "Enhance user analytics with behavior scoring"
+git push origin feature/enhanced-user-analytics
+# ... create pull request for review ...
+```
+
+### Environment-Specific Processors
+
+You can create environment-specific processor variants:
+
+```
+processors/
+├── analytics_pipeline.json          # Base processor
+├── analytics_pipeline.staging.json  # Staging variant (smaller tier)
+└── analytics_pipeline.prod.json     # Production variant (optimized)
+```
+
+Or use templating in CI/CD:
+```bash
+# Replace placeholders based on environment
+envsubst < processors/analytics_template.json > processors/analytics_deployed.json
+./sp processors create -p analytics_deployed
+```
+
+### Complex Processor Example
+
+Here's a real-world processor that demonstrates advanced capabilities:
+
+```json
+{
+    "name": "iot_anomaly_detection", 
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "iot_sensor_stream",
+                "timeField": { "$dateFromString": { "dateString": "$timestamp" }}
+            }
+        },
+        {
+            "$addFields": {
+                "rolling_avg": {
+                    "$function": {
+                        "body": "function(readings) { return readings.slice(-10).reduce((a,b) => a+b.value, 0) / 10; }",
+                        "args": ["$recent_readings"],
+                        "lang": "js"
+                    }
+                }
+            }
+        },
+        {
+            "$addFields": {
+                "is_anomaly": {
+                    "$gt": [
+                        { "$abs": { "$subtract": ["$current_value", "$rolling_avg"] }},
+                        { "$multiply": ["$rolling_avg", 0.3] }
+                    ]
+                }
+            }
+        },
+        {
+            "$match": {
+                "is_anomaly": true
+            }
+        },
+        {
+            "$merge": {
+                "into": {
+                    "connectionName": "alerts_db",
+                    "db": "monitoring",
+                    "coll": "anomalies"
+                },
+                "parallelism": 4
+            }
+        }
+    ]
+}
+```
+
+### Key Benefits of File-Based Management
+
+1. **Declarative Infrastructure**: Processors are infrastructure-as-code
+2. **Git Integration**: Full history, branching, and collaboration
+3. **Reproducible Deployments**: Same file = identical processor across environments  
+4. **Easy Templating**: Copy and modify existing processors
+5. **Automated Testing**: Validate syntax and logic before deployment
+6. **CI/CD Ready**: Seamless integration with automated pipelines
+
+**Remember**: The SP tool treats these JSON files as the **canonical source of truth**. When you run `./sp processors create`, it reads the local file and deploys exactly what's defined in JSON to Atlas Stream Processing.
 
 # Manage connections on your instance
 tools/sp instances connections list
