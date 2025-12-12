@@ -27,8 +27,9 @@ An AI-friendly, Copilot-optimized utility for working with MongoDB Atlas Stream 
 - **Testing Frameworks** - Comprehensive validation tools for AI-generated code
 
 ### Documentation
-- **[User Manual](docs/SP_USER_MANUAL.md)** - AI assistant reference with examples
-- **[AI Assistant Guide](docs/AI_ASSISTANT_GUIDE.md)** - Optimized for Copilot interactions
+- **[🚀 Copilot User Guide](docs/COPILOT_USER_GUIDE.md)** - **START HERE** - The value of using SP with GitHub Copilot
+- **[User Manual](docs/SP_USER_MANUAL.md)** - Complete CLI reference and examples
+- **[AI Assistant Guide](docs/AI_ASSISTANT_GUIDE.md)** - Technical reference for AI interactions
 - **[Performance Analysis](docs/ATLAS_STREAM_PROCESSING_PARALLELISM.md)** - Data-driven optimization guide
 - **[Development Workflow](docs/DEVELOPMENT_WORKFLOW.md)** - AI-friendly development process
 
