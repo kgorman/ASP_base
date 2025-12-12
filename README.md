@@ -1,36 +1,36 @@
 # Atlas Stream Processing Base
 
-A comprehensive GitOps-ready toolkit for MongoDB Atlas Stream Processing. This repository provides a complete foundation with powerful CLI tools, automated tier selection, performance profiling, and CI/CD integration for production stream processing pipelines.
+An AI-friendly, Copilot-optimized utility for working with MongoDB Atlas Stream Processing. This repository provides intelligent tooling designed for AI assistants to efficiently manage, profile, and optimize stream processing pipelines with natural language interactions.
 
-## 🚀 Key Features
+## 🤖 AI-Optimized Features
 
-- **Complete CLI Toolkit** (`sp`) - Unified command-line tool for all Stream Processing operations
-- **GitOps Ready** - Full CI/CD integration with GitHub Actions workflows
-- **Performance Profiling** - Time-series monitoring with trend analysis and alerting
-- **Auto Tier Selection** - Intelligent tier recommendations based on processor complexity
-- **JSON Configuration** - Declarative processor and connection definitions
-- **Production Testing** - Comprehensive validation and performance comparison tools
-- **MongoDB Verification** - Authoritative connection testing with native drivers
+- **AI-Friendly CLI** (`sp`) - Natural language compatible commands for AI assistants
+- **Intelligent Automation** - Smart tier selection and performance optimization
+- **Copilot Integration** - Structured for seamless AI assistant interactions  
+- **Performance Analytics** - AI-readable profiling with trend analysis and recommendations
+- **Declarative Configuration** - JSON-based definitions perfect for AI generation
+- **Automated Testing** - Comprehensive validation tools for AI-driven development
+- **Context-Aware Help** - Rich documentation and examples for AI understanding
 
 ## 📋 What's Included
 
-### Core Tools
-- **SP CLI** (`tools/sp`) - Comprehensive command-line interface
-- **Atlas API Library** (`tools/atlas_api.py`) - Core API wrapper with profiling
-- **Performance Profiling** - Time-series monitoring with threshold alerting
-- **Tier Analysis** - Automated tier recommendations with complexity analysis
+### AI-Optimized Tools
+- **SP CLI** (`tools/sp`) - AI-friendly command-line interface with natural language compatibility
+- **Atlas API Library** (`tools/atlas_api.py`) - Intelligent API wrapper with performance insights
+- **Smart Profiling** - AI-readable performance analytics with automated recommendations
+- **Intelligent Tier Analysis** - Automated complexity analysis and tier selection
 
-### Configuration & Templates
-- **Processor Templates** - Example stream processing pipelines
-- **Connection Templates** - Database and API connection configurations
-- **CI/CD Workflows** - GitHub Actions for automated deployment
-- **Environment Configs** - Multi-environment setup (dev/staging/production)
+### Templates & Examples
+- **Processor Templates** - AI-generatable stream processing pipeline examples
+- **Connection Templates** - Ready-to-use database and API connection configurations
+- **Development Patterns** - Best practices optimized for AI-assisted development
+- **Testing Frameworks** - Comprehensive validation tools for AI-generated code
 
 ### Documentation
-- **[User Manual](docs/SP_USER_MANUAL.md)** - Complete CLI reference and examples
-- **[GitOps CI/CD Guide](docs/GITOPS_CICD_GUIDE.md)** - Production deployment workflows
-- **[Performance Analysis](docs/ATLAS_STREAM_PROCESSING_PARALLELISM.md)** - Tier optimization guide
-- **[Testing Guide](docs/TESTING_GUIDE.md)** - Validation and testing framework
+- **[User Manual](docs/SP_USER_MANUAL.md)** - AI assistant reference with examples
+- **[AI Assistant Guide](docs/AI_ASSISTANT_GUIDE.md)** - Optimized for Copilot interactions
+- **[Performance Analysis](docs/ATLAS_STREAM_PROCESSING_PARALLELISM.md)** - Data-driven optimization guide
+- **[Development Workflow](docs/DEVELOPMENT_WORKFLOW.md)** - AI-friendly development process
 
 ## 🏗️ Project Structure
 
@@ -60,7 +60,7 @@ ASP_base/
     └── requirements.txt      # Tool dependencies
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start (AI Assistant Ready)
 
 ### Prerequisites
 
@@ -68,14 +68,14 @@ ASP_base/
 - **Atlas API Keys** (generate from Atlas UI → Access Manager → API Keys)  
 - **Python 3.7+** with pip
 
-### 1. Setup Repository
+### 1. Setup Repository (Perfect for AI Assistants)
 
 ```bash
 # Clone this repository
 git clone https://github.com/kgorman/ASP_base.git
 cd ASP_base
 
-# Install dependencies
+# Install dependencies (AI assistants can run this automatically)
 pip install -r tools/requirements.txt
 
 # Configure credentials (never commit this file!)
@@ -116,37 +116,37 @@ cd tools/
 ./sp processors tier-advise --all
 
 # Test end-to-end pipeline
-./sp instances connections test --require-mongodb
+./sp workspaces connections test --require-mongodb
 ```
 
-## 🎯 Core Capabilities
+## 🎯 Core Capabilities (AI-Optimized)
 
-### CLI Command Overview
+### CLI Commands (Natural Language Ready)
 
 ```bash
-# Workspace Management
+# Workspace Management (AI assistants can automate these)
 ./sp workspaces list                    # List all workspaces
-./sp workspaces create my-workspace     # Create new workspace
+./sp workspaces create my-workspace     # Create new workspace  
 ./sp workspaces details my-workspace    # Get workspace details
 
-# Connection Management
-./sp instances connections create       # Deploy all connections
-./sp instances connections list         # List connections
-./sp instances connections test         # Test with MongoDB verification
+# Connection Management (Perfect for AI validation)
+./sp workspaces connections create      # Deploy all connections
+./sp workspaces connections list        # List connections
+./sp workspaces connections test        # Test with MongoDB verification
 
-# Processor Management  
+# Processor Management (AI can optimize automatically)
 ./sp processors create --all           # Create all processors
 ./sp processors start --auto           # Start with optimal tier selection
 ./sp processors list                   # Show processor status
 ./sp processors stats --verbose        # Detailed statistics
 
-# Performance Analysis
-./sp processors tier-advise --all      # Get tier recommendations
-./sp processors profile --all          # Performance profiling
+# Performance Analysis (AI-readable output)
+./sp processors tier-advise --all      # Get intelligent tier recommendations
+./sp processors profile --all          # Performance profiling with trends
 ./sp processors profile -p my_processor --continuous  # Live monitoring
 ```
 
-### Performance Profiling & Monitoring
+### Smart Performance Analytics
 
 ```bash
 # Time-series profiling with trend analysis
