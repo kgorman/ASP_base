@@ -87,26 +87,26 @@ SP (Stream Processors) is a comprehensive command-line tool for managing MongoDB
 ### Create Connections
 ```bash
 # Create all connections from JSON files
-./sp instances connections create
+./sp workspaces connections create
 ```
 
 ### List Connections
 ```bash
-./sp instances connections list
+./sp workspaces connections list
 ```
 
 ### Test Connections
 ```bash
 # Test all connections with MongoDB verification
-./sp instances connections test
+./sp workspaces connections test
 
 # Test specific connection
-./sp instances connections test --connection my-connection
+./sp workspaces connections test --connection my-connection
 ```
 
 ### Delete Connection
 ```bash
-./sp instances connections delete connection-name
+./sp workspaces connections delete connection-name
 ```
 
 ## Processor Management
@@ -448,7 +448,7 @@ cat config.txt
 ./sp processors test -p my_processor
 
 # Verify connections
-./sp instances connections test
+./sp workspaces connections test
 
 # Check tier requirements
 ./sp processors tier-advise -p my_processor

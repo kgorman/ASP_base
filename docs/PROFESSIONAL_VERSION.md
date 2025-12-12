@@ -35,7 +35,7 @@ ERROR: Connection failed
 ```bash
 # Test connections with professional output
 export MONGODB_CONNECTION_STRING='mongodb+srv://user:pass@cluster.mongodb.net/'
-./sp instances connections test
+./sp workspaces connections test
 ```
 
 ### Expected Output:
@@ -61,7 +61,7 @@ All core functionality remains intact:
 - MongoDB native driver verification (REQUIRED)
 - Authoritative connection testing
 - Complete processor lifecycle management
-- CLI integration with `sp instances connections test`
+- CLI integration with `sp workspaces connections test`
 - Proper error handling and exit codes
 
 ## Status Messages

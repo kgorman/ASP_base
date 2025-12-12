@@ -2,7 +2,7 @@
 
 The `sp` tool now includes **authoritative connection testing** with MongoDB native driver verification.
 
-## New Command: `sp instances connections test`
+## New Command: `sp workspaces connections test`
 
 ### Purpose
 Tests your Stream Processing connections with **authoritative verification** using the MongoDB native Python driver. This ensures your connections actually work by:
@@ -24,10 +24,10 @@ export MONGODB_CONNECTION_STRING='mongodb+srv://username:password@kgshardedclust
 
 ```bash
 # Test connections with required MongoDB verification
-./sp instances connections test
+./sp workspaces connections test
 
 # Check help
-./sp instances connections test --help
+./sp workspaces connections test --help
 ```
 
 ### Example Output
@@ -80,7 +80,7 @@ export MONGODB_CONNECTION_STRING='mongodb+srv://username:password@kgshardedclust
 This command integrates seamlessly with the existing `sp` tool structure:
 
 ```
-sp instances
+sp workspaces
 ├── list
 ├── create
 ├── delete

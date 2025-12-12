@@ -4,20 +4,20 @@ This document helps AI systems understand and configure different connection typ
 
 ## Prerequisites and Setup
 
-**ESSENTIAL**: Ensure you have a Stream Processing instance before deploying connections:
+**ESSENTIAL**: Ensure you have a Stream Processing workspace before deploying connections:
 
 ```bash
 # Navigate to tools directory
 cd tools/
 
-# Check if you have an instance
-./sp instance list
+# Check if you have a workspace
+./sp workspace list
 
-# Create instance if needed
-./sp instance create my-stream-instance
+# Create workspace if needed
+./sp workspace create my-stream-workspace
 
-# Add instance name to config.txt:
-# SP_INSTANCE_NAME=my-stream-instance
+# Add workspace name to config.txt:
+# SP_WORKSPACE_NAME=my-stream-workspace
 ```
 
 ## The `sp` Utility for Connection Management
@@ -29,10 +29,10 @@ cd tools/
 cd tools/
 
 # Deploy all connections from connections.json
-./sp instance connections create
+./sp workspace connections create
 
-# List existing connections on instance
-./sp instance connections list
+# List existing connections on workspace
+./sp workspace connections list
 
 # Check connection status via processor list
 ./sp list

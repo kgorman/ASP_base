@@ -6,9 +6,9 @@ Your Atlas Stream Processing CLI now has **authoritative connection testing** in
 
 ##  What We Built
 
-### 1. **CLI Integration**: `sp instances connections test`
+### 1. **CLI Integration**: `sp workspaces connections test`
 ```bash
-./sp instances connections test
+sp workspaces connections test
 ```
 
 - **Seamlessly integrated** into existing `sp` tool structure
@@ -24,7 +24,7 @@ Your Atlas Stream Processing CLI now has **authoritative connection testing** in
 
 ### 3. **Complete Testing Workflow**
 ```
-sp instances connections test
+sp workspaces connections test
     ↓
 Stream Processing Test Processors
     ↓  
@@ -58,13 +58,13 @@ AUTHORITATIVE SUCCESS/FAILURE
 ```bash
 export MONGODB_CONNECTION_STRING='mongodb+srv://user:pass@kgshardedcluster01.mongodb.net/'
 cd /Users/kgorman/workspace/Github/ASP_base/tools
-./sp instances connections test
+./sp workspaces connections test
 ```
 
 ### **CI/CD Integration**
 ```bash
 # In your CI/CD pipeline
-if ./sp instances connections test; then
+if ./sp workspaces connections test; then
     echo " Stream Processing connections verified"
 else
     echo " Stream Processing connection test failed"
@@ -91,7 +91,7 @@ fi
 
 ### **Command Structure**
 ```
-sp instances connections test
+sp workspaces connections test
 ├── Checks for MONGODB_CONNECTION_STRING (REQUIRED)
 ├── Sets up virtual environment with pymongo
 ├── Runs comprehensive Stream Processing test
@@ -118,7 +118,7 @@ sp instances connections test
 ```bash
 # The ONE command that does it all:
 export MONGODB_CONNECTION_STRING='mongodb+srv://user:pass@cluster.mongodb.net/'
-./sp instances connections test
+./sp workspaces connections test
 
 # Result: Authoritative proof your Stream Processing connection works! 
 ```

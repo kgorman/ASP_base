@@ -19,7 +19,7 @@ cd tools/
 ./sp processors test -p processor_name  # Test specific processor
 
 # Deploy connections (if new/updated)
-./sp instances connections create
+./sp workspaces connections create
 
 # Deploy processors 
 ./sp processors create
@@ -81,7 +81,7 @@ cd tools/
 
 ### When User Says "Deploy" or "Create Connections"  
 1. Update `connections/connections.json`
-2. Run: `cd tools && ./sp instances connections create`
+2. Run: `cd tools && ./sp workspaces connections create`
 3. Verify: `./sp processors list`
 
 ### For Monitoring and Status

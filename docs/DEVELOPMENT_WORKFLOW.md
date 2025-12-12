@@ -13,7 +13,7 @@ This guide provides AI systems with step-by-step workflows for developing, testi
 cd tools/
 
 # Essential commands:
-./sp instances connections create    # Deploy connections
+./sp workspaces connections create    # Deploy connections
 ./sp processors create             # Deploy processors  
 ./sp processors list               # Check status
 ./sp processors stats              # Monitor performance
@@ -46,29 +46,29 @@ For the most current information on Stream Processing workflows:
 # PROJECT_ID=your_atlas_project_id
 ```
 
-#### 1.2 Create Stream Processing Instance
+#### 1.2 Create Stream Processing Workspace
 
 ```bash
 # Navigate to tools directory
 cd tools/
 
-# List existing instances (if any)
-./sp instances list
+# List existing workspaces (if any)
+./sp workspaces list
 
-# Create new instance if needed
-./sp instances create my-stream-instance
+# Create new workspace if needed
+./sp workspaces create my-stream-workspace
 
-# Add instance name to config.txt
-# SP_INSTANCE_NAME=my-stream-instance
+# Add workspace name to config.txt
+# SP_WORKSPACE_NAME=my-stream-workspace
 ```
 
 #### 1.3 Verify Environment
 
 ```bash
-# Test API connectivity and instance access
+# Test API connectivity and workspace access
 ./sp processors list
 
-# Expected output: JSON list of processors (may be empty for new instance)
+# Expected output: JSON list of processors (may be empty for new workspace)
 ```
 
 **Note**: The `sp` utility is located in `tools/sp` and is the **primary tool** for all stream processing operations. Always run it from the `tools/` directory.
@@ -112,7 +112,7 @@ cd tools/
 cd tools/
 
 # Deploy all connections from connections/*.json files
-./sp instances connections create
+./sp workspaces connections create
 
 # Expected output: JSON summary of connection creation attempts
 ```
@@ -417,7 +417,7 @@ cd tools/
 
 - **Horizontal scaling**: Create multiple processors for different data partitions
 - **Vertical scaling**: Optimize pipeline stages for better performance
-- **Load balancing**: Distribute processing across multiple instances
+- **Load balancing**: Distribute processing across multiple workspaces
 - **Resource monitoring**: Track memory and CPU usage patterns
 
 ## AI Development Guidelines

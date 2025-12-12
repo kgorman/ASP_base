@@ -27,11 +27,11 @@ Reference the official examples at:
 
 > **Important**: Always check these repositories for the latest patterns and best practices as they are maintained by the MongoDB product team.
 
-## Stream Processing Instance Management
+## Stream Processing Workspace Management
 
 ### Onboarding Workflow for New Users
 
-**NEW USER ASSUMPTION**: Users have only an Atlas account and API keys. They may not have a Stream Processing instance yet.
+**NEW USER ASSUMPTION**: Users have only an Atlas account and API keys. They may not have a Stream Processing workspace yet.
 
 1. **Initial Setup** (API Keys + Project ID)
 ```bash
@@ -43,52 +43,52 @@ PROJECT_ID=your_atlas_project_id
 
 2. **Instance Discovery and Creation**
 ```bash
-# Check existing instances
-./sp instances list
+# Check existing workspaces
+./sp workspaces list
 
-# Create new instance if needed
-./sp instances create my-stream-instance --cloud-provider AWS --region US_EAST_1
+# Create new workspace if needed
+./sp workspaces create my-stream-workspace --cloud-provider AWS --region US_EAST_1
 
 # Add to config.txt after creation
-SP_INSTANCE_NAME=my-stream-instance
+SP_WORKSPACE_NAME=my-stream-workspace
 ```
 
 3. **Proceed with Standard Workflow**
-- Deploy connections: `./sp instances connections create`
+- Deploy connections: `./sp workspaces connections create`
 - Deploy processors: `./sp processors create`
 - Start processing: `./sp processors start`
 - Monitor performance: `./sp processors stats`
 
-### Instance Management Commands
+### Workspace Management Commands
 
-The `sp` utility now supports full instance lifecycle management:
+The `sp` utility now supports full workspace lifecycle management:
 
 ```bash
-# List instances  
-./sp instances list
+# List workspaces  
+./sp workspaces list
 
-# Create instance
-./sp instances create <name> [--cloud-provider AWS] [--region US_EAST_1]
+# Create workspace
+./sp workspaces create <name> [--cloud-provider AWS] [--region US_EAST_1]
 
-# Get instance details
-./sp instances details <name>
+# Get workspace details
+./sp workspaces details <name>
 
-# Delete instance
-./sp instances delete <name>
+# Delete workspace
+./sp workspaces delete <name>
 ```
 
 ### Configuration Requirements
 
-- **For instance management**: Only `PUBLIC_KEY`, `PRIVATE_KEY`, `PROJECT_ID` required
-- **For processor/connection operations**: Must also have `SP_INSTANCE_NAME` in config.txt
+- **For workspace management**: Only `PUBLIC_KEY`, `PRIVATE_KEY`, `PROJECT_ID` required
+- **For processor/connection operations**: Must also have `SP_WORKSPACE_NAME` in config.txt
 
 ### AI Implementation Guidelines
 
 When helping users:
 
-1. **Check if they have an instance**: Start with `./sp instances list`
-2. **Guide instance creation**: If no instance exists, use `./sp instances create`
-3. **Update configuration**: Ensure `SP_INSTANCE_NAME` is added to config.txt
+1. **Check if they have a workspace**: Start with `./sp workspaces list`
+2. **Guide workspace creation**: If no workspace exists, use `./sp workspaces create`
+3. **Update configuration**: Ensure `SP_WORKSPACE_NAME` is added to config.txt
 4. **Proceed with standard workflow**: Connections → Processors → Start → Monitor
 
 ## Repository Architecture Understanding
@@ -340,7 +340,7 @@ The `sp` utility provides unified management for all stream processing operation
 
 ```bash
 # Create all connections from connections.json files
-./sp instances connections create
+./sp workspaces connections create
 
 # Lists existing connections (via processor status)
 ./sp processors list

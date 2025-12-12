@@ -142,7 +142,7 @@ jobs:
       - name: Validate Connections
         run: |
           cd tools
-          ./sp instances connections test --require-mongodb
+          ./sp workspaces connections test --require-mongodb
       
       - name: Comment PR with Analysis
         uses: actions/github-script@v7
@@ -198,7 +198,7 @@ jobs:
       - name: Deploy Connections
         run: |
           cd tools
-          ./sp instances connections create
+          ./sp workspaces connections create
       
       - name: Deploy Processors
         run: |
@@ -270,7 +270,7 @@ jobs:
         run: |
           cd tools
           ./sp processors stats --all > pre-deploy-health.json
-          ./sp instances connections test
+          ./sp workspaces connections test
       
       - name: Blue-Green Deployment Strategy
         run: |
@@ -508,7 +508,7 @@ echo "PRIVATE_KEY=$ATLAS_PRIVATE_KEY" >> config.txt
 echo "PROJECT_ID=$PROJECT_ID" >> config.txt
 
 # Deploy with environment-specific settings
-./sp instances connections create
+./sp workspaces connections create
 ./sp processors create --all
 
 if [ "$DEFAULT_TIER" == "auto" ]; then
@@ -534,7 +534,7 @@ backup-configuration:
       run: |
         cd tools
         ./sp processors list > backup/processors-$(date +%Y%m%d).json
-        ./sp instances connections list > backup/connections-$(date +%Y%m%d).json
+        ./sp workspaces connections list > backup/connections-$(date +%Y%m%d).json
         
     - name: Store Backup
       uses: actions/upload-artifact@v4
@@ -575,7 +575,7 @@ regression-test:
     ./sp processors list
     
     echo "🔍 Connection status:"
-    ./sp instances connections list
+    ./sp workspaces connections list
     
     echo "📊 Resource usage:"
     ./sp processors stats --all --verbose
@@ -638,7 +638,7 @@ echo "⚡ Performance Check:"
 
 # Connection validation
 echo "🔗 Connection Health:"
-./sp instances connections test
+./sp workspaces connections test
 
 echo "✅ Health check complete"
 ```
