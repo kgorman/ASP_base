@@ -1,5 +1,5 @@
 {
-    "name": "solar_simple_processor",
+    "name": "connection_test_writer",
     "pipeline": [
         {
             "$source": {
@@ -8,24 +8,22 @@
             }
         },
         {
-            "$match": {
-                "obs.max_watts": { "$exists": true, "$ne": null, "$gt": 100 }
-            }
+            "$limit": 10
         },
         {
             "$addFields": {
-                "processing_timestamp": "$$NOW",
-                "processor_name": "solar_simple_processor",
-                "alert_type": "HIGH_SOLAR_OUTPUT",
-                "filtered_max_watts": "$obs.max_watts"
+                "test_timestamp": "$$NOW",
+                "test_id": { "$toString": "$_id" },
+                "test_source": "connection_test",
+                "original_data": "$$ROOT"
             }
         },
         {
             "$merge": {
                 "into": {
                     "connectionName": "Cluster01",
-                    "db": "demo",
-                    "coll": "high_output_records"
+                    "db": "test",
+                    "coll": "connection_verification"
                 },
                 "whenNotMatched": "insert"
             }

@@ -15,46 +15,46 @@ This document summarizes the `sp` utility usage for AI systems working with Mong
 cd tools/
 
 # Test processors before deployment
-./sp test                    # Test all processors
-./sp test -p processor_name  # Test specific processor
+./sp processors test                    # Test all processors
+./sp processors test -p processor_name  # Test specific processor
 
 # Deploy connections (if new/updated)
-./sp create connections
+./sp instances connections create
 
 # Deploy processors 
-./sp create processors
+./sp processors create
 
 # Check status
-./sp list
+./sp processors list
 
 # Monitor performance
-./sp stats
+./sp processors stats
 
 # Lifecycle management
-./sp start    # Start all processors
-./sp stop     # Stop all processors  
-./sp restart  # Restart all processors
+./sp processors start    # Start all processors
+./sp processors stop     # Stop all processors  
+./sp processors restart  # Restart all processors
 ```
 
 ### Individual Processor Management
 ```bash
 # Drop specific processor
-./sp drop processor_name
+./sp processors drop processor_name
 
 # Drop ALL processors (careful!)
-./sp drop --all
+./sp processors drop --all
 
 # Stats for specific processor
-./sp stats --processor processor_name
+./sp processors stats --processor processor_name
 ```
 
 ### Testing and Validation
 ```bash
 # Test all processor configurations
-./sp test
+./sp processors test
 
 # Test specific processor
-./sp test -p solar_simple_processor
+./sp processors test -p solar_simple_processor
 
 # Returns JSON output with validation results
 # Always test before deploying to catch issues early
@@ -75,19 +75,19 @@ cd tools/
 
 ### When User Says "Create a Processor"
 1. Generate JSON file in `processors/` directory
-2. Run: `cd tools && ./sp create processors`
-3. Verify: `./sp list`
-4. Start if needed: `./sp start`
+2. Run: `cd tools && ./sp processors create`
+3. Verify: `./sp processors list`
+4. Start if needed: `./sp processors start`
 
 ### When User Says "Deploy" or "Create Connections"  
 1. Update `connections/connections.json`
-2. Run: `cd tools && ./sp create connections`
-3. Verify: `./sp list`
+2. Run: `cd tools && ./sp instances connections create`
+3. Verify: `./sp processors list`
 
 ### For Monitoring and Status
-- Use `./sp list` for current status
-- Use `./sp stats` for performance metrics
-- Use `./sp start/stop/restart` for lifecycle management
+- Use `./sp processors list` for current status
+- Use `./sp processors stats` for performance metrics
+- Use `./sp processors start/stop/restart` for lifecycle management
 
 ## Mandatory Usage
 

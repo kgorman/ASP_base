@@ -1,0 +1,14 @@
+{
+  "connections": [
+    {
+      "name": "atlas_cluster",
+      "type": "Cluster",
+      "clusterName": "YourClusterName",
+      "dbRoleToExecute": {
+        "role": "atlasAdmin",
+        "type": "BUILT_IN"
+      },
+      "description": "MongoDB Atlas cluster connection for data storage"
+    }
+  ]
+}

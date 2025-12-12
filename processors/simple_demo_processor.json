@@ -1,0 +1,42 @@
+{
+    "name": "simple_demo_processor",
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "sample_stream_solar",
+                "timeField": { "$dateFromString": { "dateString": "$timestamp" }}
+            }
+        },
+        {
+            "$addFields": {
+                "processing_timestamp": "$$NOW",
+                "processor_name": "simple_demo_processor",
+                "message": "Hello from ASP!",
+                "data_size": { "$size": { "$objectToArray": "$$ROOT" }},
+                "has_voltage": { "$ifNull": ["$obs.voltage", false] }
+            }
+        },
+        {
+            "$project": {
+                "timestamp": 1,
+                "processing_timestamp": 1,
+                "processor_name": 1,
+                "message": 1,
+                "data_size": 1,
+                "has_voltage": 1,
+                "original_voltage": "$obs.voltage",
+                "device_id": "$device_id"
+            }
+        },
+        {
+            "$merge": {
+                "into": {
+                    "connectionName": "Cluster01",
+                    "db": "demo",
+                    "coll": "simple_processor_output"
+                },
+                "whenNotMatched": "insert"
+            }
+        }
+    ]
+}

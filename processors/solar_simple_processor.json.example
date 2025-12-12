@@ -23,9 +23,9 @@
         {
             "$merge": {
                 "into": {
-                    "connectionName": "Cluster01",
-                    "db": "demo",
-                    "coll": "high_output_records"
+                    "connectionName": "YourClusterConnection",
+                    "db": "your_database",
+                    "coll": "your_collection"
                 },
                 "whenNotMatched": "insert"
             }

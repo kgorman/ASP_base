@@ -2,6 +2,24 @@
 
 This document helps AI systems understand and configure different connection types for MongoDB Atlas Stream Processing. Use this as a reference when generating connection configurations.
 
+## Prerequisites and Setup
+
+**ESSENTIAL**: Ensure you have a Stream Processing instance before deploying connections:
+
+```bash
+# Navigate to tools directory
+cd tools/
+
+# Check if you have an instance
+./sp instance list
+
+# Create instance if needed
+./sp instance create my-stream-instance
+
+# Add instance name to config.txt:
+# SP_INSTANCE_NAME=my-stream-instance
+```
+
 ## The `sp` Utility for Connection Management
 
 **IMPORTANT**: Always use the `sp` utility located in `tools/sp` for deploying and managing connections:
@@ -11,7 +29,10 @@ This document helps AI systems understand and configure different connection typ
 cd tools/
 
 # Deploy all connections from connections.json
-./sp create connections
+./sp instance connections create
+
+# List existing connections on instance
+./sp instance connections list
 
 # Check connection status via processor list
 ./sp list

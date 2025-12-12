@@ -20,8 +20,8 @@
         },
         {
             "$emit": {
-                "connectionName": "atlas_cluster",
-                "to": "voltage_alerts"
+                "connectionName": "YourClusterConnection",
+                "to": "your_topic_or_collection"
             }
         }
     ]

@@ -7,7 +7,9 @@ PRIVATE_KEY=your_atlas_private_key_here
 # Get from Atlas UI → Project Settings → General
 PROJECT_ID=your_atlas_project_id_here
 
-# Stream Processing Instance Name
+# Stream Processing Instance Name (optional)
+# Required only for processor/connection operations
+# Use 'sp instance create' to create a new instance if needed
 # Get from Atlas UI → Stream Processing → Your instance name
 SP_INSTANCE_NAME=your_stream_processing_instance_name_here
 

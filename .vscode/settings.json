@@ -1,0 +1,7 @@
+{
+    "explorer.autoReveal": true,
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmDelete": false,
+    "files.exclude": {},
+    "search.exclude": {}
+}

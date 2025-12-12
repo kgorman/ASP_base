@@ -1,0 +1,42 @@
+{
+  "name": "connection_test_verify",
+  "pipeline": [
+    {
+      "$source": {
+        "connectionName": "Cluster01",
+        "db": "test",
+        "coll": "connection_test_results"
+      }
+    },
+    {
+      "$count": "total_round_trip_records"
+    },
+    {
+      "$addFields": {
+        "verification_time": "$$NOW",
+        "test_status": {
+          "$cond": {
+            "if": {
+              "$gt": [
+                "$total_round_trip_records",
+                0
+              ]
+            },
+            "then": "SUCCESS - Connection verified!",
+            "else": "FAILED - No round-trip data found"
+          }
+        }
+      }
+    },
+    {
+      "$merge": {
+        "into": {
+          "connectionName": "Cluster01",
+          "db": "test",
+          "coll": "connection_test_summary"
+        },
+        "whenNotMatched": "insert"
+      }
+    }
+  ]
+}

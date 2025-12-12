@@ -13,13 +13,13 @@ This guide provides AI systems with step-by-step workflows for developing, testi
 cd tools/
 
 # Essential commands:
-./sp create connections    # Deploy connections
-./sp create processors     # Deploy processors  
-./sp list                  # Check status
-./sp stats                 # Monitor performance
-./sp start                 # Start processors
-./sp stop                  # Stop processors
-./sp restart               # Restart processors
+./sp instances connections create    # Deploy connections
+./sp processors create             # Deploy processors  
+./sp processors list               # Check status
+./sp processors stats              # Monitor performance
+./sp processors start             # Start processors
+./sp processors stop              # Stop processors
+./sp restart                       # Restart processors
 ```
 
 **AI Usage Rule**: When any user requests processor creation, deployment, monitoring, or management, **always use the `sp` utility commands** as shown above.
@@ -39,23 +39,36 @@ For the most current information on Stream Processing workflows:
 #### 1.1 Initialize Configuration
 
 ```bash
-# Ensure config.txt exists in project root or parent directory
-# Content should include:
-# ATLAS_PROJECT_ID=your_project_id
-# ATLAS_PUBLIC_KEY=your_public_key
-# ATLAS_PRIVATE_KEY=your_private_key
+# Set up basic Atlas credentials in config.txt
+# Minimum required configuration:
+# PUBLIC_KEY=your_atlas_public_key
+# PRIVATE_KEY=your_atlas_private_key  
+# PROJECT_ID=your_atlas_project_id
 ```
 
-#### 1.2 Verify Environment
+#### 1.2 Create Stream Processing Instance
 
 ```bash
 # Navigate to tools directory
 cd tools/
 
-# Test API connectivity using sp utility
-./sp list
+# List existing instances (if any)
+./sp instances list
 
-# Expected output: JSON list of existing processors (may be empty)
+# Create new instance if needed
+./sp instances create my-stream-instance
+
+# Add instance name to config.txt
+# SP_INSTANCE_NAME=my-stream-instance
+```
+
+#### 1.3 Verify Environment
+
+```bash
+# Test API connectivity and instance access
+./sp processors list
+
+# Expected output: JSON list of processors (may be empty for new instance)
 ```
 
 **Note**: The `sp` utility is located in `tools/sp` and is the **primary tool** for all stream processing operations. Always run it from the `tools/` directory.
@@ -98,11 +111,10 @@ cd tools/
 # Navigate to tools directory
 cd tools/
 
-# Create all connections defined in connections.json
-./sp create connections
+# Deploy all connections from connections/*.json files
+./sp instances connections create
 
-# Verify deployment
-./sp list
+# Expected output: JSON summary of connection creation attempts
 ```
 
 ### Phase 3: Processor Development
@@ -166,19 +178,19 @@ cd tools/
 cd tools/
 
 # Create the processor
-./sp create processors
+./sp processors create
 
-# Check processor status
-./sp list
+# Check deployment
+./sp processors list
 
-# Start the processor if needed
-./sp start
+# Start all processors
+./sp processors start
 
-# Monitor processor stats
-./sp stats
+# Monitor performance
+./sp processors stats
 
-# Check specific processor statistics
-./sp stats --processor my_processor
+# Monitor specific processor
+./sp processors stats --processor my_processor
 ```
 
 ### Phase 4: Testing and Validation
@@ -209,10 +221,10 @@ cd tools/
 cd tools/
 
 # Monitor processor performance
-./sp stats
+./sp processors stats
 
 # Check overall status
-./sp list
+./sp processors list
 
 # Check data quality in destination
 # Verify error handling via DLQ
@@ -222,10 +234,10 @@ cd tools/
 
 ```bash
 # Monitor processor metrics
-./sp stats
+./sp processors stats
 
 # For specific processor monitoring:
-./sp stats --processor processor_name
+./sp processors stats --processor processor_name
 
 # Key metrics to monitor:
 # - Input rate
@@ -252,16 +264,16 @@ cd tools/
 cd tools/
 
 # Stop existing processor (if updating)
-./sp stop
+./sp processors stop
 
 # Deploy new/updated processor
-./sp create processors
+./sp processors create
 
 # Start processor
-./sp start
+./sp processors start
 
 # Verify startup
-./sp list
+./sp processors list
 ```
 
 #### 5.3 Post-deployment Monitoring

@@ -33,82 +33,152 @@ ASP_base/
 
 ## Quick Start
 
-### Option A: Use This Repository
+### Prerequisites
+
+- **MongoDB Atlas Account**: Sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- **Atlas API Keys**: Generate from Atlas UI → Access Manager → API Keys
+- **Python 3.7+** with `requests` library
+
+### Setup and Initial Configuration
 
 ```bash
+# Option A: Clone this repository
 git clone <this-repo>
 cd ASP_base
 pip install -r tools/requirements.txt
-cp config.txt.example config.txt
-# Edit config.txt with your Atlas credentials
-```
 
-### Option B: Create New Repository from Scratch
-
-Use the repository setup script to create a fresh structure:
-
-```bash
-# Download just the setup script
+# Option B: Create new repository from scratch
 curl -O https://raw.githubusercontent.com/kgorman/ASP_base/main/tools/create-repo-structure.sh
 chmod +x create-repo-structure.sh
+./create-repo-structure.sh my-stream-processing-project
+cd my-stream-processing-project
+pip install -r tools/requirements.txt
 
-# Create new repository structure
-./create-repo-structure.sh my-new-stream-processing-project
-cd my-new-stream-processing-project
-
-# Add your Atlas credentials
+# Configure Atlas credentials and connections
 cp config.txt.example config.txt
-# Edit config.txt with your Atlas credentials
+cp connections/connections.json.example connections/connections.json
+# Edit config.txt with your Atlas API keys and Project ID
+# Edit connections/connections.json with your actual connection details
 ```
 
-### Deploy and Test
+### Create Your Stream Processing Instance
 
 ```bash
-# Create all connections from JSON definitions
-tools/sp create connections
+# Navigate to tools directory
+cd tools/
+
+# List existing instances (if any)
+./sp instance list
+
+# Create a new Stream Processing instance
+./sp instances create my-stream-instance
+
+# Update config.txt with your instance name
+# Add: SP_INSTANCE_NAME=my-stream-instance
+```
+
+### Deploy Connections and Processors
+
+```bash
+# Create connections on your instance
+./sp instances connections create
 
 # Create all processors from JSON definitions  
-tools/sp create processors
+./sp processors create
+
+# Start processing
+./sp processors start
+
+# Monitor status
+./sp processors list
+./sp processors stats
 ```
 
-### 4. Manage Processors
+## Complete Onboarding Example
+
+Here's a complete walkthrough for a new user with just an Atlas account:
 
 ```bash
-# List processor status
-tools/sp list
+# 1. Set up the repository
+git clone <this-repo>
+cd ASP_base
+pip install -r tools/requirements.txt
 
-# Start all processors
-tools/sp start
+# 2. Configure basic Atlas credentials and connections
+cp config.txt.example config.txt
+cp connections/connections.json.example connections/connections.json
+# Edit config.txt - add PUBLIC_KEY, PRIVATE_KEY, PROJECT_ID only
+# Edit connections/connections.json - update clusterName to match your cluster
 
-# View detailed statistics
-tools/sp stats
+# 3. Check existing instances
+cd tools/
+./sp instances list
 
-# Stop all processors
-tools/sp stop
+# 4. Create new instance if needed
+./sp instances create my-app-stream-processor
+
+# 5. Add instance to config.txt
+# Edit config.txt - add SP_INSTANCE_NAME=my-app-stream-processor
+
+# 6. Deploy connections and processors
+./sp instances connections create
+./sp processors create
+
+# 7. Start processing
+./sp processors start
+
+# 8. Monitor your system
+./sp processors list
+./sp processors stats
 ```
+
+**What this provides:**
+- Complete Stream Processing environment from scratch
+- Production-ready instance configuration  
+- Sample processors running on real data
+- Full monitoring and management capabilities
 
 ## Configuration
 
 ### Atlas API Configuration (`config.txt`)
 
-This file contains your MongoDB Atlas credentials and project information:
+This file contains your MongoDB Atlas credentials and project information. To get started, you only need the API keys and Project ID:
 
 ```bash
-# MongoDB Atlas API Credentials
+# MongoDB Atlas API Credentials  
 PUBLIC_KEY=your_atlas_public_key
 PRIVATE_KEY=your_atlas_private_key
 PROJECT_ID=your_atlas_project_id
+
+# Stream Processing Instance Name (add after creating instance)
 SP_INSTANCE_NAME=your_stream_processing_instance_name
 ```
 
 **How to get these values:**
+
 1. **Atlas API Keys**: Atlas UI → Access Manager → API Keys → Create API Key
-2. **Project ID**: Atlas UI → Project Settings → General
-3. **SP Instance Name**: Atlas UI → Stream Processing → Your instance name
+2. **Project ID**: Atlas UI → Project Settings → General  
+3. **SP Instance Name**: Created using `./sp instances create <name>` command
+
+**Getting Started Workflow:**
+
+1. Set up `PUBLIC_KEY`, `PRIVATE_KEY`, and `PROJECT_ID` in config.txt
+2. Use `./sp instances list` to see existing instances (if any)
+3. Use `./sp instances create <name>` to create a new instance  
+4. Add `SP_INSTANCE_NAME=<your-instance-name>` to config.txt
+5. Start deploying connections and processors
 
 ### Connection Definitions (`connections/connections.json`)
 
 Defines external connections for your stream processors to access data sources and destinations. Atlas Stream Processing supports many connection types for different platforms and services.
+
+**Quick Start**: Copy the example file and customize:
+```bash
+cp connections/connections.json.example connections/connections.json
+# Edit connections.json with your actual connection details
+```
+
+**Note**: The example file uses variable substitution (e.g., `${KAFKA_USERNAME}`, `${AWS_ROLE_ARN}`) for sensitive data. Add these variables to your `config.txt` file as needed for your specific connection types.
 
 ```json
 {
@@ -133,11 +203,28 @@ Atlas Stream Processing supports connections to various platforms and services. 
 
 Common connection types include databases, message queues, REST APIs, cloud storage, and streaming platforms.
 
+**Example Connection Types in connections.json.example:**
+
+- **Cluster**: MongoDB Atlas cluster connections with role-based access
+- **Https**: REST API endpoints with authentication headers  
+- **Kafka**: Apache Kafka and Confluent Cloud streaming platforms
+  - Basic Kafka cluster with SASL_SSL authentication
+  - Confluent Cloud managed Kafka with API key authentication
+- **S3**: AWS S3 buckets for data archival and analytics with IAM role-based access
+
 **Variable Substitution**: Use `${VARIABLE_NAME}` to reference values from `config.txt`
 
 ### Processor Definitions (`processors/*.json`)
 
 Each processor is a JSON file defining a complete stream processing pipeline. Atlas Stream Processing supports the full MongoDB aggregation pipeline syntax plus streaming-specific stages.
+
+**Quick Start**: Copy example files and customize:
+```bash
+cp processors/solar_simple_processor.json.example processors/my_processor.json
+# Edit my_processor.json with your specific pipeline logic
+```
+
+**Example Files Available**: The repository includes `.json.example` files that show anonymized processor configurations. These use placeholder values like `YourClusterConnection` and `your_database` that you can customize for your environment.
 
 **Required Structure:**
 ```json
@@ -196,46 +283,67 @@ The examples in this repository show basic patterns, but your processors can be 
 
 The `tools/sp` command is your main interface for managing Stream Processing:
 
+### Instance Management
+
+```bash
+# List all Stream Processing instances in your project
+tools/sp instances list
+
+# Create a new Stream Processing instance
+tools/sp instances create <instance-name>
+tools/sp instances create my-instance --cloud-provider AWS --region US_EAST_1
+
+# Get details of a specific instance  
+tools/sp instances details <instance-name>
+
+# Delete an instance (warning: this removes all processors!)
+tools/sp instances delete <instance-name>
+
+# Manage connections on your instance
+tools/sp instances connections list
+tools/sp instances connections create
+```
+
 ### Processor Management
 
 ```bash
 # List all processors with status
-tools/sp list
+tools/sp processors list
 
 # Show detailed processor statistics
-tools/sp stats
+tools/sp processors stats
 
 # Start all processors
-tools/sp start
+tools/sp processors start
 
 # Stop all processors  
-tools/sp stop
+tools/sp processors stop
 
 # Restart all processors (stop + start)
-tools/sp restart
+tools/sp processors restart
 ```
 
 ### Resource Creation
 
 ```bash
-# Create connections from connections/*.json
-tools/sp create connections
+# Create connections on your instance
+tools/sp instances connections create
 
 # Create processors from processors/*.json
-tools/sp create processors
+tools/sp processors create
 ```
 
 ### Processor Testing
 
 ```bash
 # Validate all processor JSON files
-tools/sp test
+tools/sp processors test
 
 # Test with detailed warnings
-tools/sp test --verbose
+tools/sp processors test --verbose
 
 # Test specific processor only
-tools/sp test -p solar_simple_processor
+tools/sp processors test -p solar_simple_processor
 ```
 
 ### Repository Setup Script
@@ -262,10 +370,10 @@ Use the setup script to create new repositories with the complete structure:
 
 ```bash
 # Use custom config file
-tools/sp --config /path/to/config.txt list
+tools/sp --config /path/to/config.txt processors list
 
 # All commands support custom config
-tools/sp --config ./prod-config.txt create processors
+tools/sp --config ./prod-config.txt processors create
 ```
 
 ### Output Format

@@ -68,7 +68,8 @@ def create_connections(api, config_dir="../"):
                 elif conn_type == "cluster":
                     conn_result = api.create_cluster_connection(
                         name=name,
-                        cluster_name=conn_data.get("clusterName", "")
+                        cluster_name=conn_data.get("clusterName", ""),
+                        db_role=conn_data.get("dbRoleToExecute")
                     )
                 else:
                     conn_result = {
@@ -244,44 +245,198 @@ def test_processors(processor_name=None):
         }
 
 
+def run_connection_test(require_mongodb=True, specific_connection=None):
+    """Run connection test with MongoDB native driver verification."""
+    import os
+    
+    # Determine the path to the test script
+    script_dir = Path(__file__).parent
+    test_script = script_dir.parent / "test" / "test_connection.py"
+    
+    if not test_script.exists():
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "operation": "connection_test",
+            "error": f"Test script not found: {test_script}",
+            "success": False
+        }
+    
+    # Check for virtual environment
+    venv_dir = script_dir.parent / "venv"
+    if venv_dir.exists():
+        # Use virtual environment python
+        python_exe = venv_dir / "bin" / "python3"
+        if not python_exe.exists():
+            python_exe = venv_dir / "bin" / "python"
+    else:
+        python_exe = "python3"
+    
+    # Check if MongoDB connection string is available when required
+    if require_mongodb and not os.environ.get('MONGODB_CONNECTION_STRING'):
+        print("CRITICAL: MongoDB native driver verification is REQUIRED")
+        print("   Set MONGODB_CONNECTION_STRING environment variable with your Atlas cluster credentials.")
+        print("   Example: export MONGODB_CONNECTION_STRING='mongodb+srv://user:pass@kgshardedcluster01.mongodb.net/'")
+        print("\n   This ensures authoritative verification that your Stream Processing connection works.")
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "operation": "connection_test",
+            "error": "MONGODB_CONNECTION_STRING environment variable required",
+            "success": False
+        }
+    
+    try:
+        # Run the test
+        print("Launching Atlas Stream Processing Connection Test")
+        print("MongoDB Native Driver Verification: REQUIRED")
+        print("=" * 60)
+        
+        result = subprocess.run([
+            str(python_exe), str(test_script)
+        ], check=False, cwd=str(script_dir.parent))
+        
+        success = result.returncode == 0
+        
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "operation": "connection_test", 
+            "success": success,
+            "exit_code": result.returncode,
+            "mongodb_verification": "required" if require_mongodb else "optional"
+        }
+        
+    except Exception as e:
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "operation": "connection_test",
+            "error": str(e),
+            "success": False
+        }
+
+
 def main():
     parser = argparse.ArgumentParser(description="SP - Stream Processors CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
+    # Workspace management commands
+    workspaces_parser = subparsers.add_parser("workspaces", help="Stream Processing workspace management")
+    workspaces_subparsers = workspaces_parser.add_subparsers(dest="workspace_action", help="Workspace actions")
+    
+    # Legacy instances alias for backward compatibility
+    instances_parser = subparsers.add_parser("instances", help="Stream Processing workspace management (legacy alias)")
+    instances_subparsers = instances_parser.add_subparsers(dest="instance_action", help="Workspace actions")
+    
+    # Workspace list
+    workspaces_list_parser = workspaces_subparsers.add_parser("list", help="List Stream Processing workspaces")
+    instances_list_parser = instances_subparsers.add_parser("list", help="List Stream Processing workspaces")
+    
+    # Workspace create
+    workspaces_create_parser = workspaces_subparsers.add_parser("create", help="Create Stream Processing workspace")
+    workspaces_create_parser.add_argument("name", help="Workspace name")
+    workspaces_create_parser.add_argument("--cloud-provider", default="AWS", choices=["AWS", "GCP", "AZURE"], help="Cloud provider (default: AWS)")
+    workspaces_create_parser.add_argument("--region", default="US_EAST_1", help="Region (default: US_EAST_1)")
+    
+    instances_create_parser = instances_subparsers.add_parser("create", help="Create Stream Processing workspace")
+    instances_create_parser.add_argument("name", help="Workspace name")
+    instances_create_parser.add_argument("--cloud-provider", default="AWS", choices=["AWS", "GCP", "AZURE"], help="Cloud provider (default: AWS)")
+    instances_create_parser.add_argument("--region", default="US_EAST_1", help="Region (default: US_EAST_1)")
+    
+    # Workspace delete
+    workspaces_delete_parser = workspaces_subparsers.add_parser("delete", help="Delete Stream Processing workspace") 
+    workspaces_delete_parser.add_argument("name", help="Workspace name")
+    
+    instances_delete_parser = instances_subparsers.add_parser("delete", help="Delete Stream Processing workspace") 
+    instances_delete_parser.add_argument("name", help="Workspace name")
+    
+    # Workspace details
+    workspaces_details_parser = workspaces_subparsers.add_parser("details", help="Get Stream Processing workspace details")
+    workspaces_details_parser.add_argument("name", help="Workspace name")
+    
+    instances_details_parser = instances_subparsers.add_parser("details", help="Get Stream Processing workspace details")
+    instances_details_parser.add_argument("name", help="Workspace name")
+    
+    # Workspace connections management
+    workspaces_connections_parser = workspaces_subparsers.add_parser("connections", help="Manage workspace connections")
+    workspaces_connections_subparsers = workspaces_connections_parser.add_subparsers(dest="connections_action", help="Connection actions")
+    
+    instances_connections_parser = instances_subparsers.add_parser("connections", help="Manage workspace connections")
+    instances_connections_subparsers = instances_connections_parser.add_subparsers(dest="connections_action", help="Connection actions")
+    
+    # Instance connections create
+    instances_connections_create_parser = instances_connections_subparsers.add_parser("create", help="Create connections from JSON files")
+    
+    # Instance connections list
+    instances_connections_list_parser = instances_connections_subparsers.add_parser("list", help="List connections in instance")
+    
+    # Instance connections delete
+    instances_connections_delete_parser = instances_connections_subparsers.add_parser("delete", help="Delete connection from instance")
+    instances_connections_delete_parser.add_argument("connection_name", help="Connection name to delete")
+    
+    # Instance connections test
+    instances_connections_test_parser = instances_connections_subparsers.add_parser("test", help="Test connections with authoritative MongoDB verification")
+    instances_connections_test_parser.add_argument("--require-mongodb", action="store_true", default=True, 
+                                                   help="Require MongoDB native driver verification (default: True)")
+    instances_connections_test_parser.add_argument("--connection", help="Test specific connection (default: first connection)")
+    
     # Processor management commands
-    list_parser = subparsers.add_parser("list", help="List processor status")
-    list_parser.add_argument("-p", "--processor", help="Show status for specific processor only")
+    processors_parser = subparsers.add_parser("processors", help="Processor management")
+    processors_subparsers = processors_parser.add_subparsers(dest="processor_action", help="Processor actions")
     
-    stats_parser = subparsers.add_parser("stats", help="Show processor statistics")
-    stats_parser.add_argument("-p", "--processor", help="Show stats for specific processor only")
+    # Processor create
+    processors_create_parser = processors_subparsers.add_parser("create", help="Create processors from JSON files")
+    processors_create_parser.add_argument("-p", "--processor", help="Specific processor name to create")
     
-    start_parser = subparsers.add_parser("start", help="Start processors")
-    start_parser.add_argument("-p", "--processor", help="Start specific processor only")
+    # Processor list
+    processors_list_parser = processors_subparsers.add_parser("list", help="List processors")
+    processors_list_parser.add_argument("-p", "--processor", help="Show specific processor")
     
-    stop_parser = subparsers.add_parser("stop", help="Stop processors")
-    stop_parser.add_argument("-p", "--processor", help="Stop specific processor only")
+    # Processor stats
+    processors_stats_parser = processors_subparsers.add_parser("stats", help="Show processor statistics")
+    processors_stats_parser.add_argument("-p", "--processor", help="Show stats for specific processor")
+    processors_stats_parser.add_argument("--verbose", action="store_true", help="Show detailed statistics for each pipeline operator")
     
-    restart_parser = subparsers.add_parser("restart", help="Restart processors")
-    restart_parser.add_argument("-p", "--processor", help="Restart specific processor only")
+    # Processor start
+    processors_start_parser = processors_subparsers.add_parser("start", help="Start processors")
+    processors_start_parser.add_argument("-p", "--processor", help="Start specific processor")
+    processors_start_parser.add_argument("-t", "--tier", help="Tier to start processor on (e.g., SP5, SP10, SP30, SP50)")
+    processors_start_parser.add_argument("--all-tier", help="Tier to start all processors on (e.g., SP5, SP10, SP30, SP50)")
+    processors_start_parser.add_argument("--auto", action="store_true", help="Automatically determine optimal tier based on processor complexity")
     
-    drop_parser = subparsers.add_parser("drop", help="Drop (delete) processors")
-    drop_parser.add_argument("processor_name", nargs="?", help="Processor name to drop (if not specified, drops all processors)")
-    drop_parser.add_argument("--all", action="store_true", help="Drop all processors")
-    drop_parser.add_argument("-p", "--processor", help="Drop specific processor only")
+    # Processor stop
+    processors_stop_parser = processors_subparsers.add_parser("stop", help="Stop processors")
+    processors_stop_parser.add_argument("-p", "--processor", help="Stop specific processor")
     
-    # Create commands
-    create_parser = subparsers.add_parser("create", help="Create connections or processors")
-    create_subparsers = create_parser.add_subparsers(dest="create_type", help="What to create")
+    # Processor restart
+    processors_restart_parser = processors_subparsers.add_parser("restart", help="Restart processors")
+    processors_restart_parser.add_argument("-p", "--processor", help="Restart specific processor")
+    processors_restart_parser.add_argument("-t", "--tier", help="Tier to restart processor on (e.g., SP5, SP10, SP30, SP50)")
+    processors_restart_parser.add_argument("--all-tier", help="Tier to restart all processors on (e.g., SP5, SP10, SP30, SP50)")
+    processors_restart_parser.add_argument("--auto", action="store_true", help="Automatically determine optimal tier based on processor complexity")
     
-    create_conn_parser = create_subparsers.add_parser("connections", help="Create connections from JSON files")
-    create_conn_parser.add_argument("-p", "--processor", help="Not applicable for connections (ignored)")
+    # Processor drop
+    processors_drop_parser = processors_subparsers.add_parser("drop", help="Drop (delete) processors")
+    processors_drop_parser.add_argument("-p", "--processor", help="Drop specific processor")
+    processors_drop_parser.add_argument("processor_name", nargs="?", help="Processor name to drop")
+    processors_drop_parser.add_argument("--all", action="store_true", help="Drop all processors")
     
-    create_proc_parser = create_subparsers.add_parser("processors", help="Create processors from JSON files")
-    create_proc_parser.add_argument("-p", "--processor", help="Create specific processor only")
+    # Processor test
+    processors_test_parser = processors_subparsers.add_parser("test", help="Test processor configurations")
+    processors_test_parser.add_argument("-p", "--processor", help="Test specific processor")
     
-    # Test command
-    test_parser = subparsers.add_parser("test", help="Validate processor JSON files")
-    test_parser.add_argument("-p", "--processor", help="Test specific processor only")
+    # Processor tier-advise
+    processors_tier_advise_parser = processors_subparsers.add_parser("tier-advise", help="Analyze processor and recommend optimal tier")
+    processors_tier_advise_parser.add_argument("-p", "--processor", help="Analyze specific processor")
+    processors_tier_advise_parser.add_argument("--all", action="store_true", help="Analyze all processors")
+    
+    # Processor profile
+    processors_profile_parser = processors_subparsers.add_parser("profile", help="Profile processor performance over time")
+    processors_profile_parser.add_argument("-p", "--processor", help="Profile specific processor")
+    processors_profile_parser.add_argument("--all", action="store_true", help="Profile all processors")
+    processors_profile_parser.add_argument("--duration", type=int, default=300, help="Profiling duration in seconds (default: 300)")
+    processors_profile_parser.add_argument("--interval", type=int, default=30, help="Sampling interval in seconds (default: 30)")
+    processors_profile_parser.add_argument("--metrics", default="memory,latency,throughput", help="Comma-separated metrics to track")
+    processors_profile_parser.add_argument("--output", help="Output file for results (JSON format)")
+    processors_profile_parser.add_argument("--continuous", action="store_true", help="Continuous monitoring (Ctrl+C to stop)")
+    processors_profile_parser.add_argument("--thresholds", help="JSON file with alerting thresholds")
     
     # Global options
     parser.add_argument("--config", default="../config.txt",
@@ -312,252 +467,531 @@ def main():
         }
         print(colorize_json(error_result))
         sys.exit(1)
-    
-    # Handle create commands
-    if args.command == "create":
-        if not args.create_type:
-            create_parser.print_help()
+
+    # Handle workspace management commands (both workspaces and instances commands)
+    if args.command == "workspaces":
+        if not args.workspace_action:
+            workspaces_parser.print_help()
+            sys.exit(1)
+            
+        if args.workspace_action == "list":
+            result = api.list_instances()
+            print(colorize_json(result))
+            
+        elif args.workspace_action == "create":
+            result = api.create_instance(args.name, args.cloud_provider, args.region)
+            print(colorize_json(result))
+            
+        elif args.workspace_action == "delete":
+            result = api.delete_instance(args.name)
+            print(colorize_json(result))
+            
+        elif args.workspace_action == "details":
+            result = api.get_instance_details(args.name)
+            print(colorize_json(result))
+            
+        elif args.workspace_action == "connections":
+            if not args.connections_action:
+                workspaces_connections_parser.print_help()
+                sys.exit(1)
+                
+    # Handle instance management commands (legacy alias)
+    elif args.command == "instances":
+        if not args.instance_action:
+            instances_parser.print_help()
+            sys.exit(1)
+            
+        if args.instance_action == "list":
+            result = api.list_instances()
+            print(colorize_json(result))
+            
+        elif args.instance_action == "create":
+            result = api.create_instance(args.name, args.cloud_provider, args.region)
+            print(colorize_json(result))
+            
+        elif args.instance_action == "delete":
+            result = api.delete_instance(args.name)
+            print(colorize_json(result))
+            
+        elif args.instance_action == "details":
+            result = api.get_instance_details(args.name)
+            print(colorize_json(result))
+            
+        elif args.instance_action == "connections":
+            if not args.connections_action:
+                instances_connections_parser.print_help()
+                sys.exit(1)
+                
+            if args.connections_action == "create":
+                # Adjust path since we're running from tools/ directory
+                config_dir = "../" if Path("../connections").exists() else "./"
+                result = create_connections(api, config_dir)
+                print(colorize_json(result))
+                
+            elif args.connections_action == "list":
+                result = api.list_connections()
+                print(colorize_json(result))
+                
+            elif args.connections_action == "delete":
+                result = api.delete_connection(args.connection_name)
+                print(colorize_json(result))
+                
+            elif args.connections_action == "test":
+                # Run connection test with MongoDB verification
+                result = run_connection_test(args.require_mongodb, args.connection)
+                if not result["success"]:
+                    sys.exit(1)
+            
+        return
+
+    # Handle processor management commands
+    if args.command == "processors":
+        if not args.processor_action:
+            processors_parser.print_help()
             sys.exit(1)
         
-        if args.create_type == "connections":
-            # Adjust path since we're running from tools/ directory
-            config_dir = "../" if Path("../connections").exists() else "./"
-            result = create_connections(api, config_dir)
-            print(colorize_json(result))
-        elif args.create_type == "processors":
+        if args.processor_action == "create":
             # Adjust path since we're running from tools/ directory  
             config_dir = "../" if Path("../processors").exists() else "./"
             result = create_processors(api, config_dir, args.processor)
             print(colorize_json(result))
-        return
-    
-    # Handle processor management commands
-    if args.command == "list":
-        if args.processor:
-            # List specific processor
-            result = api.get_single_processor_status(args.processor)
-        else:
-            # List all processors
-            result = api.get_processor_status()
-        print(colorize_json(result))
-        
-    elif args.command == "stats":
-        if args.processor:
-            # Stats for specific processor
-            result = api.get_single_processor_stats(args.processor)
-        else:
-            # Stats for all processors
-            result = api.get_processor_stats()
-        print(colorize_json(result))
             
-    elif args.command == "start":
-        if args.processor:
-            # Start specific processor
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "start",
-                "summary": {"total": 1, "success": 0, "failed": 0},
-                "processors": []
-            }
-            proc_result = api.start_processor(args.processor)
-            result["processors"].append(proc_result)
-            if proc_result["status"] == "started":
-                result["summary"]["success"] += 1
+        elif args.processor_action == "list":
+            if args.processor:
+                # List specific processor
+                result = api.get_single_processor_status(args.processor)
             else:
-                result["summary"]["failed"] += 1
-        else:
-            # Start all processors
-            processors = api.list_processors()
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "start",
-                "summary": {"total": len(processors), "success": 0, "failed": 0},
-                "processors": []
-            }
-            
-            for processor in processors:
-                proc_result = api.start_processor(processor["name"])
-                result["processors"].append(proc_result)
-                if proc_result["status"] == "started":
-                    result["summary"]["success"] += 1
-                else:
-                    result["summary"]["failed"] += 1
-        
-        print(colorize_json(result))
-            
-    elif args.command == "stop":
-        if args.processor:
-            # Stop specific processor
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "stop",
-                "summary": {"total": 1, "success": 0, "failed": 0},
-                "processors": []
-            }
-            proc_result = api.stop_processor(args.processor)
-            result["processors"].append(proc_result)
-            if proc_result["status"] == "stopped":
-                result["summary"]["success"] += 1
-            else:
-                result["summary"]["failed"] += 1
-        else:
-            # Stop all processors
-            processors = api.list_processors()
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "stop",
-                "summary": {"total": len(processors), "success": 0, "failed": 0},
-                "processors": []
-            }
-            
-            for processor in processors:
-                proc_result = api.stop_processor(processor["name"])
-                result["processors"].append(proc_result)
-                if proc_result["status"] == "stopped":
-                    result["summary"]["success"] += 1
-                else:
-                    result["summary"]["failed"] += 1
-        
-        print(colorize_json(result))
-            
-    elif args.command == "restart":
-        if args.processor:
-            # Restart specific processor
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "restart",
-                "summary": {"total": 2, "success": 0, "failed": 0},
-                "processors": []
-            }
-            
-            # Stop processor
-            proc_result = api.stop_processor(args.processor)
-            result["processors"].append(proc_result)
-            if proc_result["status"] == "stopped":
-                result["summary"]["success"] += 1
-            else:
-                result["summary"]["failed"] += 1
-            
-            # Wait a bit
-            time.sleep(2)
-            
-            # Start processor
-            proc_result = api.start_processor(args.processor)
-            result["processors"].append(proc_result)
-            if proc_result["status"] == "started":
-                result["summary"]["success"] += 1
-            else:
-                result["summary"]["failed"] += 1
-        else:
-            # Restart all processors
-            processors = api.list_processors()
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "restart",
-                "summary": {"total": len(processors) * 2, "success": 0, "failed": 0},
-                "processors": []
-            }
-            
-            # Stop all processors
-            for processor in processors:
-                proc_result = api.stop_processor(processor["name"])
-                result["processors"].append(proc_result)
-                if proc_result["status"] == "stopped":
-                    result["summary"]["success"] += 1
-                else:
-                    result["summary"]["failed"] += 1
-            
-            # Wait a bit
-            time.sleep(2)
-            
-            # Start all processors
-            for processor in processors:
-                proc_result = api.start_processor(processor["name"])
-                result["processors"].append(proc_result)
-                if proc_result["status"] == "started":
-                    result["summary"]["success"] += 1
-                else:
-                    result["summary"]["failed"] += 1
-        
-        print(colorize_json(result))
-    
-    elif args.command == "drop":
-        # Handle -p/--processor option first
-        if args.processor:
-            target_processor = args.processor
-        elif args.processor_name:
-            target_processor = args.processor_name
-        else:
-            target_processor = None
-            
-        if target_processor:
-            # Drop a specific processor
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "drop",
-                "summary": {"total": 1, "success": 0, "failed": 0},
-                "processors": []
-            }
-            
-            proc_result = api.delete_processor(target_processor)
-            result["processors"].append(proc_result)
-            if proc_result.get("status") == "deleted":
-                result["summary"]["success"] += 1
-            else:
-                result["summary"]["failed"] += 1
-            
+                # List all processors with tier information
+                processors = api.list_processors()
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "list",
+                    "summary": {"total": len(processors), "success": len(processors), "failed": 0},
+                    "processors": []
+                }
+                
+                for processor in processors:
+                    proc_info = {
+                        "name": processor.get("name", "unknown"),
+                        "status": processor.get("state", processor.get("status", "unknown")),
+                        "tier": processor.get("tier", "unknown"),
+                        "scaleFactor": processor.get("scaleFactor", "unknown")
+                    }
+                    result["processors"].append(proc_info)
+                    
             print(colorize_json(result))
             
-        elif args.all:
-            # Drop all processors
-            processors = api.list_processors()
-            timestamp = datetime.now(timezone.utc).isoformat()
-            result = {
-                "timestamp": timestamp,
-                "operation": "drop_all",
-                "summary": {"total": len(processors), "success": 0, "failed": 0},
-                "processors": []
-            }
+        elif args.processor_action == "stats":
+            verbose = getattr(args, 'verbose', False)
+            if args.processor:
+                # Stats for specific processor
+                result = api.get_single_processor_stats(args.processor, verbose=verbose)
+            else:
+                # Stats for all processors
+                result = api.get_processor_stats(verbose=verbose)
+            print(colorize_json(result))
+                
+        elif args.processor_action == "start":
+            if args.processor:
+                # Start specific processor
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "start",
+                    "summary": {"total": 1, "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                # Determine tier
+                tier = None
+                if args.auto:
+                    tier = api.analyze_processor_complexity(args.processor)
+                    print(f"Auto-selected tier {tier} for processor {args.processor}")
+                elif args.tier:
+                    tier = args.tier
+                
+                proc_result = api.start_processor(args.processor, tier)
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "started":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+            else:
+                # Start all processors
+                processors = api.list_processors()
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "start",
+                    "summary": {"total": len(processors), "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                # Use all-tier if specified, otherwise no tier (unless auto)
+                tier_for_all = getattr(args, 'all_tier', None)
+                
+                for processor in processors:
+                    # Determine tier for each processor
+                    if args.auto:
+                        tier = api.analyze_processor_complexity(processor["name"])
+                        print(f"Auto-selected tier {tier} for processor {processor['name']}")
+                    else:
+                        tier = tier_for_all
+                        
+                    proc_result = api.start_processor(processor["name"], tier)
+                    result["processors"].append(proc_result)
+                    if proc_result["status"] == "started":
+                        result["summary"]["success"] += 1
+                    else:
+                        result["summary"]["failed"] += 1
             
-            for processor in processors:
-                proc_result = api.delete_processor(processor["name"])
+            print(colorize_json(result))
+        
+        elif args.processor_action == "stop":
+            if args.processor:
+                # Stop specific processor
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "stop",
+                    "summary": {"total": 1, "success": 0, "failed": 0},
+                    "processors": []
+                }
+                proc_result = api.stop_processor(args.processor)
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "stopped":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+            else:
+                # Stop all processors
+                processors = api.list_processors()
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "stop",
+                    "summary": {"total": len(processors), "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                for processor in processors:
+                    proc_result = api.stop_processor(processor["name"])
+                    result["processors"].append(proc_result)
+                    if proc_result["status"] == "stopped":
+                        result["summary"]["success"] += 1
+                    else:
+                        result["summary"]["failed"] += 1
+            
+            print(colorize_json(result))
+        
+        elif args.processor_action == "restart":
+            if args.processor:
+                # Restart specific processor
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "restart",
+                    "summary": {"total": 2, "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                # Stop processor
+                proc_result = api.stop_processor(args.processor)
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "stopped":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+                
+                # Wait a bit
+                time.sleep(2)
+                
+                # Start processor
+                tier = None
+                if args.auto:
+                    tier = api.analyze_processor_complexity(args.processor)
+                    print(f"Auto-selected tier {tier} for processor {args.processor}")
+                elif args.tier:
+                    tier = args.tier
+                    
+                proc_result = api.start_processor(args.processor, tier)
+                result["processors"].append(proc_result)
+                if proc_result["status"] == "started":
+                    result["summary"]["success"] += 1
+                else:
+                    result["summary"]["failed"] += 1
+            else:
+                # Restart all processors
+                processors = api.list_processors()
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "restart",
+                    "summary": {"total": len(processors) * 2, "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                # Use all-tier if specified, otherwise no tier (unless auto)
+                tier_for_all = getattr(args, 'all_tier', None)
+                
+                # Stop all processors
+                for processor in processors:
+                    proc_result = api.stop_processor(processor["name"])
+                    result["processors"].append(proc_result)
+                    if proc_result["status"] == "stopped":
+                        result["summary"]["success"] += 1
+                    else:
+                        result["summary"]["failed"] += 1
+                
+                # Wait a bit
+                time.sleep(2)
+                
+                # Start all processors
+                for processor in processors:
+                    # Determine tier for each processor
+                    if args.auto:
+                        tier = api.analyze_processor_complexity(processor["name"])
+                        print(f"Auto-selected tier {tier} for processor {processor['name']}")
+                    else:
+                        tier = tier_for_all
+                        
+                    proc_result = api.start_processor(processor["name"], tier)
+                    result["processors"].append(proc_result)
+                    if proc_result["status"] == "started":
+                        result["summary"]["success"] += 1
+                    else:
+                        result["summary"]["failed"] += 1
+            
+            print(colorize_json(result))
+        
+        elif args.processor_action == "drop":
+            # Handle -p/--processor option first
+            if args.processor:
+                target_processor = args.processor
+            elif args.processor_name:
+                target_processor = args.processor_name
+            else:
+                target_processor = None
+                
+            if target_processor:
+                # Drop a specific processor
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "drop",
+                    "summary": {"total": 1, "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                proc_result = api.delete_processor(target_processor)
                 result["processors"].append(proc_result)
                 if proc_result.get("status") == "deleted":
                     result["summary"]["success"] += 1
                 else:
                     result["summary"]["failed"] += 1
+                
+                print(colorize_json(result))
+                
+            elif args.all:
+                # Drop all processors
+                processors = api.list_processors()
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "drop_all",
+                    "summary": {"total": len(processors), "success": 0, "failed": 0},
+                    "processors": []
+                }
+                
+                for processor in processors:
+                    proc_result = api.delete_processor(processor["name"])
+                    result["processors"].append(proc_result)
+                    if proc_result.get("status") == "deleted":
+                        result["summary"]["success"] += 1
+                    else:
+                        result["summary"]["failed"] += 1
+                
+                print(colorize_json(result))
+                
+            else:
+                # No processor name and no --all flag
+                error_result = {
+                    "error": "Must specify either a processor name or use --all flag",
+                    "usage": "sp processors drop <processor_name> OR sp processors drop --all OR sp processors drop -p <processor_name>",
+                    "examples": [
+                        "sp processors drop solar_simple_processor",
+                        "sp processors drop -p solar_simple_processor",
+                        "sp processors drop --processor solar_simple_processor",
+                        "sp processors drop --all"
+                    ]
+                }
+                print(colorize_json(error_result))
+                sys.exit(1)
+        
+        elif args.processor_action == "test":
+            # Handle processor testing
+            result = test_processors(processor_name=args.processor)
+            
+            # The test function already prints the colorized output
+            # Just exit with the appropriate code
+            sys.exit(0 if result.get("success", False) else 1)
+        
+        elif args.processor_action == "tier-advise":
+            # Handle tier analysis/advice
+            timestamp = datetime.now(timezone.utc).isoformat()
+            
+            if args.processor:
+                # Analyze specific processor
+                try:
+                    detailed_analysis = api.analyze_processor_complexity_detailed(args.processor)
+                    result = {
+                        "timestamp": timestamp,
+                        "operation": "tier-advise",
+                        "processor": args.processor,
+                        "recommended_tier": detailed_analysis["recommended_tier"],
+                        "analysis": detailed_analysis["analysis"],
+                        "reasoning": detailed_analysis["reasoning"],
+                        "status": "success"
+                    }
+                except Exception as e:
+                    result = {
+                        "timestamp": timestamp,
+                        "operation": "tier-advise",
+                        "processor": args.processor,
+                        "status": "error",
+                        "message": str(e)
+                    }
+                    
+            elif args.all:
+                # Analyze all processors
+                try:
+                    processors = api.list_processors()
+                    result = {
+                        "timestamp": timestamp,
+                        "operation": "tier-advise",
+                        "summary": {"total": len(processors), "success": 0, "failed": 0},
+                        "processors": []
+                    }
+                    
+                    for processor in processors:
+                        processor_name = processor.get("name")
+                        try:
+                            detailed_analysis = api.analyze_processor_complexity_detailed(processor_name)
+                            proc_result = {
+                                "name": processor_name,
+                                "current_status": processor.get("state", processor.get("status", "unknown")),
+                                "current_tier": processor.get("tier", "unknown"), 
+                                "recommended_tier": detailed_analysis["recommended_tier"],
+                                "analysis": detailed_analysis["analysis"],
+                                "reasoning": detailed_analysis["reasoning"],
+                                "status": "success"
+                            }
+                            result["summary"]["success"] += 1
+                        except Exception as e:
+                            proc_result = {
+                                "name": processor_name,
+                                "status": "error",
+                                "message": str(e)
+                            }
+                            result["summary"]["failed"] += 1
+                            
+                        result["processors"].append(proc_result)
+                        
+                except Exception as e:
+                    result = {
+                        "timestamp": timestamp,
+                        "operation": "tier-advise",
+                        "status": "error", 
+                        "message": f"Failed to list processors: {str(e)}"
+                    }
+            else:
+                # No processor specified and --all not used
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "tier-advise",
+                    "status": "error",
+                    "message": "Please specify a processor with -p or use --all to analyze all processors"
+                }
             
             print(colorize_json(result))
-            
-        else:
-            # No processor name and no --all flag
-            error_result = {
-                "error": "Must specify either a processor name or use --all flag",
-                "usage": "sp drop <processor_name> OR sp drop --all OR sp drop -p <processor_name>",
-                "examples": [
-                    "sp drop solar_simple_processor",
-                    "sp drop -p solar_simple_processor",
-                    "sp drop --processor solar_simple_processor",
-                    "sp drop --all"
-                ]
-            }
-            print(colorize_json(error_result))
-            sys.exit(1)
-    
-    elif args.command == "test":
-        # Handle processor testing
-        result = test_processors(processor_name=args.processor)
         
-        # The test function already prints the colorized output
-        # Just exit with the appropriate code
-        sys.exit(0 if result.get("success", False) else 1)
+        elif args.processor_action == "profile":
+            # Handle processor profiling
+            timestamp = datetime.now(timezone.utc).isoformat()
+            
+            # Determine which processors to profile
+            if args.processor:
+                processor_names = [args.processor]
+            elif args.all:
+                try:
+                    processors = api.list_processors()
+                    processor_names = [p.get("name") for p in processors if p.get("state") == "STARTED"]
+                except Exception as e:
+                    result = {
+                        "timestamp": timestamp,
+                        "operation": "profile",
+                        "status": "error",
+                        "message": f"Failed to list processors: {str(e)}"
+                    }
+                    print(colorize_json(result))
+                    return
+            else:
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "profile",
+                    "status": "error",
+                    "message": "Please specify a processor with -p or use --all to profile all running processors"
+                }
+                print(colorize_json(result))
+                return
+            
+            # Parse metrics
+            requested_metrics = [m.strip() for m in args.metrics.split(',')]
+            
+            # Load thresholds if specified
+            thresholds = {}
+            if args.thresholds:
+                try:
+                    with open(args.thresholds, 'r') as f:
+                        thresholds = json.load(f)
+                except Exception as e:
+                    print(f"Warning: Could not load thresholds file: {e}")
+            
+            try:
+                # Run profiling
+                if args.continuous:
+                    print(f"Starting continuous profiling of {len(processor_names)} processor(s). Press Ctrl+C to stop...")
+                    result = api.profile_processors_continuous(processor_names, args.interval, requested_metrics, thresholds)
+                else:
+                    print(f"Profiling {len(processor_names)} processor(s) for {args.duration} seconds (sampling every {args.interval}s)...")
+                    result = api.profile_processors(processor_names, args.duration, args.interval, requested_metrics, thresholds)
+                
+                # Save to output file if specified
+                if args.output:
+                    with open(args.output, 'w') as f:
+                        json.dump(result, f, indent=2)
+                    print(f"Results saved to {args.output}")
+                
+                print(colorize_json(result))
+                
+            except KeyboardInterrupt:
+                print("\nProfiling interrupted by user")
+                return
+            except Exception as e:
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "profile",
+                    "status": "error",
+                    "message": str(e)
+                }
+                print(colorize_json(result))
+        
+        return
+
+    # If we get here, an unknown command was provided
+    parser.print_help()
+    sys.exit(1)
 
 
 if __name__ == "__main__":

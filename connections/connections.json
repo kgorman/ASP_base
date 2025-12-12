@@ -1,10 +1,13 @@
 {
   "connections": [
     {
-      "name": "atlas_cluster",
+      "name": "Cluster01",
       "type": "Cluster",
-      "clusterName": "YourClusterName",
-      "description": "MongoDB Atlas cluster connection for data storage (update clusterName to match your cluster)"
+      "clusterName": "KGShardedCluster01",
+      "dbRoleToExecute": {
+        "role": "atlasAdmin",
+        "type": "BUILT_IN"
+      }
     }
   ]
 }

@@ -1,0 +1,34 @@
+{
+    "name": "connection_test_reader",
+    "pipeline": [
+        {
+            "$source": {
+                "connectionName": "Cluster01",
+                "db": "test",
+                "coll": "connection_verification"
+            }
+        },
+        {
+            "$match": {
+                "test_source": "connection_test"
+            }
+        },
+        {
+            "$addFields": {
+                "read_timestamp": "$$NOW",
+                "verification_status": "SUCCESS",
+                "round_trip_test": true
+            }
+        },
+        {
+            "$merge": {
+                "into": {
+                    "connectionName": "Cluster01",
+                    "db": "test",
+                    "coll": "connection_test_results"
+                },
+                "whenNotMatched": "insert"
+            }
+        }
+    ]
+}

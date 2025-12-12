@@ -27,6 +27,70 @@ Reference the official examples at:
 
 > **Important**: Always check these repositories for the latest patterns and best practices as they are maintained by the MongoDB product team.
 
+## Stream Processing Instance Management
+
+### Onboarding Workflow for New Users
+
+**NEW USER ASSUMPTION**: Users have only an Atlas account and API keys. They may not have a Stream Processing instance yet.
+
+1. **Initial Setup** (API Keys + Project ID)
+```bash
+# User needs only these in config.txt initially:
+PUBLIC_KEY=your_atlas_public_key
+PRIVATE_KEY=your_atlas_private_key  
+PROJECT_ID=your_atlas_project_id
+```
+
+2. **Instance Discovery and Creation**
+```bash
+# Check existing instances
+./sp instances list
+
+# Create new instance if needed
+./sp instances create my-stream-instance --cloud-provider AWS --region US_EAST_1
+
+# Add to config.txt after creation
+SP_INSTANCE_NAME=my-stream-instance
+```
+
+3. **Proceed with Standard Workflow**
+- Deploy connections: `./sp instances connections create`
+- Deploy processors: `./sp processors create`
+- Start processing: `./sp processors start`
+- Monitor performance: `./sp processors stats`
+
+### Instance Management Commands
+
+The `sp` utility now supports full instance lifecycle management:
+
+```bash
+# List instances  
+./sp instances list
+
+# Create instance
+./sp instances create <name> [--cloud-provider AWS] [--region US_EAST_1]
+
+# Get instance details
+./sp instances details <name>
+
+# Delete instance
+./sp instances delete <name>
+```
+
+### Configuration Requirements
+
+- **For instance management**: Only `PUBLIC_KEY`, `PRIVATE_KEY`, `PROJECT_ID` required
+- **For processor/connection operations**: Must also have `SP_INSTANCE_NAME` in config.txt
+
+### AI Implementation Guidelines
+
+When helping users:
+
+1. **Check if they have an instance**: Start with `./sp instances list`
+2. **Guide instance creation**: If no instance exists, use `./sp instances create`
+3. **Update configuration**: Ensure `SP_INSTANCE_NAME` is added to config.txt
+4. **Proceed with standard workflow**: Connections → Processors → Start → Monitor
+
 ## Repository Architecture Understanding
 
 ### Core Components
@@ -158,7 +222,7 @@ The `sp` utility located in `tools/sp` is the **main command-line interface** fo
 Atlas Stream Processing provides built-in sample streams like `sample_stream_solar` that are automatically available. These don't need to be defined in connections.json:
 
 - `sample_stream_solar` - Solar energy data for testing
-- Other sample streams may be available (check with `./tools/sp list`)
+- Other sample streams may be available (check with `./tools/sp processors list`)
 
 ### Variable Substitution
 
@@ -276,44 +340,45 @@ The `sp` utility provides unified management for all stream processing operation
 
 ```bash
 # Create all connections from connections.json files
-./sp create connections
+./sp instances connections create
 
 # Lists existing connections (via processor status)
-./sp list
+./sp processors list
 ```
 
 #### Processor Management
 
 ```bash
 # Create all processors from processors/ directory
-./sp create processors
+./sp processors create
 
 # List all processors with status
-./sp list
+./sp processors list
 
 # Show detailed processor statistics  
-./sp stats
+./sp processors stats
 
 # Show statistics for specific processor
-./sp stats --processor processor_name
+./sp processors stats --processor processor_name
 ```
 
 #### Processor Lifecycle Operations
 
 ```bash
 # Start all stopped processors
-./sp start
+./sp processors start
 
 # Stop all running processors  
-./sp stop
+./sp processors stop
 
 # Restart all processors (stop then start)
-./sp restart
+./sp processors restart
 
 # Delete a specific processor
-./sp drop processor_name
+./sp processors drop processor_name
 
 # Delete ALL processors (use with caution)
+./sp processors drop --all
 ./sp drop --all
 ```
 
