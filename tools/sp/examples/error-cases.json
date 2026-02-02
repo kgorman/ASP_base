@@ -1,0 +1,244 @@
+{
+  "description": "Common error patterns and their outputs from SP tool",
+  "error_examples": [
+    {
+      "scenario": "Missing config.txt file",
+      "command": "./sp processors list",
+      "output": {
+        "timestamp": "2026-01-21T12:00:00.000Z",
+        "operation": "list_processors",
+        "error": "Configuration file not found",
+        "message": "No config.txt found. Searched: ../config.txt, ./config.txt, config.txt",
+        "solution": "Create config.txt with your Atlas credentials"
+      }
+    },
+    {
+      "scenario": "Invalid processor JSON",
+      "command": "./sp processors test -p broken_processor",
+      "output": {
+        "timestamp": "2026-01-21T12:05:00.000Z",
+        "operation": "test",
+        "summary": {
+          "total": 1,
+          "passed": 0,
+          "failed": 1
+        },
+        "results": [
+          {
+            "processor": "broken_processor",
+            "file": "/path/to/processors/broken_processor.json",
+            "status": "failed",
+            "error": "Invalid JSON syntax",
+            "message": "Expecting ',' delimiter: line 12 column 5 (char 245)",
+            "solution": "Fix JSON syntax in processor file"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "Missing pipeline in processor JSON",
+      "command": "./sp processors test -p no_pipeline",
+      "output": {
+        "timestamp": "2026-01-21T12:10:00.000Z",
+        "operation": "test",
+        "summary": {
+          "total": 1,
+          "passed": 0,
+          "failed": 1
+        },
+        "results": [
+          {
+            "processor": "no_pipeline",
+            "file": "/path/to/processors/no_pipeline.json",
+            "status": "failed",
+            "validation": {
+              "pipeline": "missing",
+              "error": "Pipeline array is required"
+            },
+            "solution": "Add 'pipeline' array to processor JSON"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "Processor already exists",
+      "command": "./sp processors create -p solar_simple_processor",
+      "output": {
+        "timestamp": "2026-01-21T12:15:00.000Z",
+        "operation": "create_processors",
+        "summary": {
+          "total": 1,
+          "success": 0,
+          "failed": 1
+        },
+        "processors": [
+          {
+            "name": "solar_simple_processor",
+            "file": "../processors/solar_simple_processor.json",
+            "operation": "create_processor",
+            "status": "failed",
+            "message": "Processor already exists",
+            "error_code": "PROCESSOR_ALREADY_EXISTS",
+            "solution": "Delete existing processor first or use a different name"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "Invalid Atlas credentials",
+      "command": "./sp processors list",
+      "output": {
+        "timestamp": "2026-01-21T12:20:00.000Z",
+        "operation": "list_processors",
+        "error": "Authentication failed",
+        "message": "Invalid API credentials (401 Unauthorized)",
+        "solution": "Verify PUBLIC_KEY and PRIVATE_KEY in config.txt"
+      }
+    },
+    {
+      "scenario": "Processor not found for drop",
+      "command": "./sp processors drop nonexistent_processor",
+      "output": {
+        "timestamp": "2026-01-21T12:25:00.000Z",
+        "operation": "drop_processor",
+        "processor": "nonexistent_processor",
+        "status": "failed",
+        "error": "Processor not found",
+        "message": "Processor 'nonexistent_processor' does not exist",
+        "solution": "Check processor name with './sp processors list'"
+      }
+    },
+    {
+      "scenario": "Cannot start processor in wrong state",
+      "command": "./sp processors start -p solar_simple_processor",
+      "output": {
+        "timestamp": "2026-01-21T12:30:00.000Z",
+        "operation": "start_processor",
+        "processor": "solar_simple_processor",
+        "status": "failed",
+        "currentState": "STARTING",
+        "message": "Processor must be in CREATED or STOPPED state to start",
+        "solution": "Wait for processor to reach CREATED state or use --auto flag"
+      }
+    },
+    {
+      "scenario": "No processors directory",
+      "command": "./sp processors create",
+      "output": {
+        "timestamp": "2026-01-21T12:35:00.000Z",
+        "operation": "create_processors",
+        "summary": {
+          "total": 0,
+          "success": 0,
+          "failed": 0
+        },
+        "processors": [
+          {
+            "error": "Processors directory not found: ../processors",
+            "operation": "create_processors",
+            "status": "failed",
+            "solution": "Create 'processors/' directory and add processor JSON files"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "Connection test without MongoDB connection string",
+      "command": "./sp workspaces connections test",
+      "output": {
+        "timestamp": "2026-01-21T12:40:00.000Z",
+        "operation": "connection_test",
+        "error": "MONGODB_CONNECTION_STRING environment variable required",
+        "success": false,
+        "message": "MongoDB native driver verification is REQUIRED",
+        "solution": "Set MONGODB_CONNECTION_STRING environment variable: export MONGODB_CONNECTION_STRING='mongodb+srv://user:pass@cluster.mongodb.net/'"
+      }
+    },
+    {
+      "scenario": "Invalid tier specified in options",
+      "command": "./sp processors test -p invalid_tier",
+      "output": {
+        "timestamp": "2026-01-21T12:45:00.000Z",
+        "operation": "test",
+        "summary": {
+          "total": 1,
+          "passed": 0,
+          "failed": 1
+        },
+        "results": [
+          {
+            "processor": "invalid_tier",
+            "file": "/path/to/processors/invalid_tier.json",
+            "status": "failed",
+            "validation": {
+              "tier": "invalid",
+              "error": "Invalid tier 'SP99'. Valid tiers: SP10, SP30, SP50"
+            },
+            "solution": "Use valid tier (SP10, SP30, or SP50) or remove tier to use auto-selection"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "Network timeout during API call",
+      "command": "./sp processors list",
+      "output": {
+        "timestamp": "2026-01-21T12:50:00.000Z",
+        "operation": "list_processors",
+        "error": "Network timeout",
+        "message": "Request to Atlas API timed out after 30 seconds",
+        "solution": "Check network connectivity and try again"
+      }
+    },
+    {
+      "scenario": "Workspace not found",
+      "command": "./sp processors create",
+      "output": {
+        "timestamp": "2026-01-21T12:55:00.000Z",
+        "operation": "create_processors",
+        "error": "Workspace not configured",
+        "message": "No active Stream Processing workspace found for this project",
+        "solution": "Create a workspace first with './sp workspaces create'"
+      }
+    }
+  ],
+  
+  "recovery_patterns": {
+    "authentication_errors": {
+      "symptoms": ["401 Unauthorized", "Invalid credentials"],
+      "checks": [
+        "Verify config.txt exists and is readable",
+        "Confirm PUBLIC_KEY and PRIVATE_KEY are correct",
+        "Check PROJECT_ID matches your Atlas project",
+        "Ensure API keys have Stream Processing permissions"
+      ]
+    },
+    "validation_errors": {
+      "symptoms": ["Invalid JSON", "Missing pipeline", "Invalid tier"],
+      "checks": [
+        "Validate JSON syntax (use jsonlint or similar)",
+        "Ensure 'pipeline' array exists in processor JSON",
+        "Check tier value is SP10, SP30, or SP50",
+        "Verify connection names match defined connections"
+      ]
+    },
+    "state_errors": {
+      "symptoms": ["Cannot start processor", "Invalid state transition"],
+      "checks": [
+        "Check current processor state with './sp processors list'",
+        "Use --auto flag to automatically wait for correct state",
+        "Ensure processor is in valid state for requested operation",
+        "Wait for async operations to complete before next command"
+      ]
+    },
+    "not_found_errors": {
+      "symptoms": ["Processor not found", "Connection not found", "Workspace not found"],
+      "checks": [
+        "List available items first (./sp processors list)",
+        "Check spelling of processor/connection names",
+        "Ensure workspace is created and active",
+        "Verify you're in the correct Atlas project"
+      ]
+    }
+  }
+}

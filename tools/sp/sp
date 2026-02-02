@@ -6,102 +6,9 @@ Unified tool for WeatherFlow Atlas Stream Processing management
 
 import argparse
 import json
+import os
 import sys
 import time
-import subprocess
-from datetime import datetime, timezone
-from pathlib import Path
-
-from atlas_api import AtlasStreamProcessingAPI, colorize_json
-
-
-def create_connections(api, config_dir="../"):
-    """Create connections from connections.json files"""
-    timestamp = datetime.now(timezone.utc).isoformat()
-    result = {
-        "timestamp": timestamp,
-        "operation": "create_connections",
-        "summary": {"total": 0, "success": 0, "failed": 0},
-        "connections": []
-    }
-    
-    # Look for connections.json files
-    connections_dir = Path(config_dir) / "connections"
-    connections_file = Path(config_dir) / "connections.json"
-    
-    connections_files = []
-    if connections_dir.exists():
-        connections_files.extend(connections_dir.glob("*.json"))
-    if connections_file.exists():
-        connections_files.append(connections_file)
-    
-    if not connections_files:
-        result["connections"].append({
-            "error": "No connections.json files found",
-            "searched_paths": [str(connections_dir), str(connections_file)]
-        })
-        return result
-    
-    for conn_file in connections_files:
-        try:
-            with open(conn_file, 'r') as f:
-                connections_data = json.load(f)
-            
-            # Handle nested structure with "connections" key
-            if "connections" in connections_data:
-                connections_list = connections_data["connections"]
-            elif isinstance(connections_data, list):
-                connections_list = connections_data
-            else:
-                connections_list = [connections_data]
-            
-            for conn_data in connections_list:
-                result["summary"]["total"] += 1
-                
-                conn_type = conn_data.get("type", "").lower()
-                name = conn_data.get("name", "")
-                
-                if conn_type == "https":
-                    # Substitute variables in URL
-                    url = api._substitute_variables(conn_data.get("url", ""))
-                    conn_result = api.create_http_connection(name=name, url=url)
-                elif conn_type == "cluster":
-                    conn_result = api.create_cluster_connection(
-                        name=name,
-                        cluster_name=conn_data.get("clusterName", ""),
-                        db_role=conn_data.get("dbRoleToExecute")
-                    )
-                else:
-                    conn_result = {
-                        "name": name,
-                        "operation": "create_connection",
-                        "status": "failed",
-                        "message": f"Unsupported connection type: {conn_type}"
-                    }
-                
-                result["connections"].append(conn_result)
-                if conn_result.get("status") in ["created", "already_exists"]:
-                    result["summary"]["success"] += 1
-                else:
-                    result["summary"]["failed"] += 1
-                    
-        except Exception as e:
-            result["summary"]["total"] += 1
-            result["summary"]["failed"] += 1
-            result["connections"].append({
-                "file": str(conn_file),
-                "operation": "create_connection",
-                "status": "failed",
-                "message": f"Error reading file: {str(e)}"
-            })
-    
-    return result
-
-
-def create_processors(api, config_dir="../", processor_name=None):
-    """Create processors from processors/ directory JSON files"""
-    timestamp = datetime.now(timezone.utc).isoformat()
-    result = {
         "timestamp": timestamp,
         "operation": "create_processors",
         "summary": {"total": 0, "success": 0, "failed": 0},
@@ -195,14 +102,14 @@ def test_processors(processor_name=None):
     timestamp = datetime.now(timezone.utc).isoformat()
     
     # Use the test runner script
-    test_script = Path(__file__).parent.parent / "tests" / "test_runner.py"
+    test_script = Path(__file__).parent / "test_runner.py"
     
     if not test_script.exists():
         return {
             "timestamp": timestamp,
             "operation": "test",
             "error": f"Test script not found: {test_script}",
-            "message": "Run from the tools/ directory or ensure tests/test_runner.py exists"
+            "message": "Run from the tools/sp directory or ensure test_runner.py exists"
         }
     
     try:
@@ -212,7 +119,7 @@ def test_processors(processor_name=None):
             cmd.extend(["--processor", processor_name])
         
         # Run the test script
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=test_script.parent.parent)
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent.parent.parent)
         
         # Since test_runner.py already outputs colorized JSON, just return it directly
         if result.returncode == 0:
@@ -358,6 +265,9 @@ def main():
     workspaces_connections_parser = workspaces_subparsers.add_parser("connections", help="Manage workspace connections")
     workspaces_connections_subparsers = workspaces_connections_parser.add_subparsers(dest="connections_action", help="Connection actions")
     
+                                                   help="Require MongoDB native driver verification (default: True)")
+    workspaces_connections_test_parser.add_argument("--connection", help="Test specific connection (default: first connection)")
+    
     instances_connections_parser = instances_subparsers.add_parser("connections", help="Manage workspace connections")
     instances_connections_subparsers = instances_connections_parser.add_subparsers(dest="connections_action", help="Connection actions")
     
@@ -386,7 +296,7 @@ def main():
     processors_create_parser.add_argument("-p", "--processor", help="Specific processor name to create")
     
     # Processor list
-    processors_list_parser = processors_subparsers.add_parser("list", help="List processors")
+    processors_list_parser = processors_subparsers.add_parser("list", help="List processors with full details (pipeline, stats, errors)")
     processors_list_parser.add_argument("-p", "--processor", help="Show specific processor")
     
     # Processor stats
@@ -438,9 +348,83 @@ def main():
     processors_profile_parser.add_argument("--continuous", action="store_true", help="Continuous monitoring (Ctrl+C to stop)")
     processors_profile_parser.add_argument("--thresholds", help="JSON file with alerting thresholds")
     
+    # Processor schema (sample output)
+    processors_schema_parser = processors_subparsers.add_parser("schema", help="Sample processor output to show schema")
+    processors_schema_parser.add_argument("processor_name", help="Processor name to sample")
+    processors_schema_parser.add_argument("-n", "--num-samples", type=int, default=3, help="Number of sample documents (default: 3)")
+    
+    # Collection management commands
+    collections_parser = subparsers.add_parser("collections", help="MongoDB collection inspection")
+    collections_subparsers = collections_parser.add_subparsers(dest="collections_action", help="Collection actions")
+    
+    # Collection count
+    collections_count_parser = collections_subparsers.add_parser("count", help="Count documents in MongoDB collection")
+    collections_count_parser.add_argument("-c", "--collection", required=True, help="Collection name to count")
+    
+    # Collection query
+    collections_query_parser = collections_subparsers.add_parser("query", help="Query documents from MongoDB collection")
+    collections_query_parser.add_argument("-c", "--collection", required=True, help="Collection name (format: database.collection)")
+    collections_query_parser.add_argument("-l", "--limit", type=int, default=100, help="Number of documents to return (default: 100)")
+    collections_query_parser.add_argument("-f", "--filter", help="MongoDB filter as JSON string (default: {})")
+    collections_query_parser.add_argument("-p", "--projection", help="Fields to include as JSON string (default: all fields)")
+    
+    # Collection list
+    collections_list_parser = collections_subparsers.add_parser("list", help="List all collections in a database")
+    collections_list_parser.add_argument("-d", "--database", default="test", help="Database name (default: test)")
+    
+    # Collection TTL management
+    collections_ttl_parser = collections_subparsers.add_parser("ttl", help="Manage TTL (time-to-live) for MongoDB collection")
+    collections_ttl_parser.add_argument("-c", "--collection", required=True, help="Collection name (format: database.collection or just collection)")
+    collections_ttl_parser.add_argument("-s", "--seconds", type=int, help="TTL in seconds. Omit to remove TTL.")
+    collections_ttl_parser.add_argument("-f", "--field", default="_ts", help="Field to set TTL on (default: _ts)")
+    
+    # Collection insertOne
+    collections_insert_parser = collections_subparsers.add_parser("insertOne", help="Insert a document into MongoDB collection")
+    collections_insert_parser.add_argument("-c", "--collection", required=True, help="Collection name (format: database.collection)")
+    collections_insert_parser.add_argument("-d", "--document", help="Document as JSON string (default: generates test doc with timestamp)")
+    
+    # Collection deleteOne
+    collections_delete_parser = collections_subparsers.add_parser("deleteOne", help="Delete a document from MongoDB collection")
+    collections_delete_parser.add_argument("-c", "--collection", required=True, help="Collection name (format: database.collection)")
+    collections_delete_parser.add_argument("-f", "--filter", help="MongoDB filter as JSON string (default: deletes first document)")
+    
+    # Collection index management
+    collections_index_parser = collections_subparsers.add_parser("index", help="Manage indexes on MongoDB collection")
+    collections_index_parser.add_argument("-c", "--collection", required=True, help="Collection name (format: database.collection)")
+    collections_index_parser.add_argument("-k", "--keys", help="Index keys as JSON (e.g., '{\"field\": 1}' or '{\"a\": 1, \"b\": -1}')")
+    collections_index_parser.add_argument("-u", "--unique", action="store_true", help="Create unique index")
+    collections_index_parser.add_argument("-n", "--name", help="Index name (auto-generated if not specified)")
+    collections_index_parser.add_argument("--drop", help="Drop index by name")
+    collections_index_parser.add_argument("--list", action="store_true", help="List all indexes on the collection")
+    
+    # Collection preImages (changeStreamPreAndPostImages)
+    collections_preimages_parser = collections_subparsers.add_parser("preImages", help="Enable/disable changeStreamPreAndPostImages on collection")
+    collections_preimages_parser.add_argument("-c", "--collection", required=True, help="Collection name (format: database.collection)")
+    collections_preimages_parser.add_argument("--enable", action="store_true", help="Enable pre and post images")
+    collections_preimages_parser.add_argument("--disable", action="store_true", help="Disable pre and post images")
+    
+    # Materialized Views
+    materialized_views_parser = subparsers.add_parser("materialized_views", help="Materialized view management (collection + stream processor)")
+    materialized_views_subparsers = materialized_views_parser.add_subparsers(dest="materialized_views_action", help="Materialized view actions")
+    
+    # Create materialized view
+    materialized_views_create_parser = materialized_views_subparsers.add_parser("create", help="Create a materialized view (collection + processor)")
+    materialized_views_create_parser.add_argument("view_name", help="Name for both the collection and processor")
+    materialized_views_create_parser.add_argument("-d", "--database", required=True, help="Database name for the materialized view collection")
+    materialized_views_create_parser.add_argument("-f", "--file", required=True, help="Processor JSON file path")
+    
+    # List materialized views
+    materialized_views_list_parser = materialized_views_subparsers.add_parser("list", help="List all materialized views (collections with matching processors)")
+    materialized_views_list_parser.add_argument("-d", "--database", help="Filter by database name (optional)")
+    
+    # Drop materialized view
+    materialized_views_drop_parser = materialized_views_subparsers.add_parser("drop", help="Drop a materialized view (removes both collection and processor)")
+    materialized_views_drop_parser.add_argument("view_name", help="Name of the materialized view to drop")
+    materialized_views_drop_parser.add_argument("-d", "--database", help="Database name to limit search (optional)")
+    
     # Global options
-    parser.add_argument("--config", default="../config.txt",
-                       help="Atlas API configuration file path (default: ../config.txt)")
+    parser.add_argument("--config", default="../../config.txt",
+                       help="Atlas API configuration file path (default: ../../config.txt)")
     
     args = parser.parse_args()
     
@@ -495,6 +479,31 @@ def main():
                 workspaces_connections_parser.print_help()
                 sys.exit(1)
                 
+            if args.connections_action == "create":
+                # Adjust path since we're running from tools/sp/ directory
+                config_dir = "../../" if Path("../../connections").exists() else "./"
+                result = create_connections(api, config_dir)
+                print(colorize_json(result))
+                
+            elif args.connections_action == "list":
+                timestamp = datetime.now(timezone.utc).isoformat()
+                connections = api.list_connections()
+                result = {
+                    "timestamp": timestamp,
+                    "operation": "list_connections",
+                    "summary": {"total": len(connections)},
+                    "connections": connections
+                }
+                print(colorize_json(result))
+                
+            elif args.connections_action == "delete":
+                result = api.delete_connection(args.connection_name)
+                print(colorize_json(result))
+                
+            # ...test feature removed...
+        
+        return
+                
     # Handle instance management commands (legacy alias)
     elif args.command == "instances":
         if not args.instance_action:
@@ -523,8 +532,8 @@ def main():
                 sys.exit(1)
                 
             if args.connections_action == "create":
-                # Adjust path since we're running from tools/ directory
-                config_dir = "../" if Path("../connections").exists() else "./"
+                # Adjust path since we're running from tools/sp/ directory
+                config_dir = "../../" if Path("../../connections").exists() else "./"
                 result = create_connections(api, config_dir)
                 print(colorize_json(result))
                 
@@ -536,11 +545,7 @@ def main():
                 result = api.delete_connection(args.connection_name)
                 print(colorize_json(result))
                 
-            elif args.connections_action == "test":
-                # Run connection test with MongoDB verification
-                result = run_connection_test(args.require_mongodb, args.connection)
-                if not result["success"]:
-                    sys.exit(1)
+            # ...test feature removed...
             
         return
 
@@ -551,8 +556,8 @@ def main():
             sys.exit(1)
         
         if args.processor_action == "create":
-            # Adjust path since we're running from tools/ directory  
-            config_dir = "../" if Path("../processors").exists() else "./"
+            # Adjust path since we're running from tools/sp/ directory  
+            config_dir = "../../" if Path("../../processors").exists() else "./"
             result = create_processors(api, config_dir, args.processor)
             print(colorize_json(result))
             
@@ -561,24 +566,15 @@ def main():
                 # List specific processor
                 result = api.get_single_processor_status(args.processor)
             else:
-                # List all processors with tier information
-                processors = api.list_processors()
+                # List all processors with full details (always verbose)
+                processors = api.list_processors(verbose=True)
                 timestamp = datetime.now(timezone.utc).isoformat()
                 result = {
                     "timestamp": timestamp,
                     "operation": "list",
                     "summary": {"total": len(processors), "success": len(processors), "failed": 0},
-                    "processors": []
+                    "processors": processors
                 }
-                
-                for processor in processors:
-                    proc_info = {
-                        "name": processor.get("name", "unknown"),
-                        "status": processor.get("state", processor.get("status", "unknown")),
-                        "tier": processor.get("tier", "unknown"),
-                        "scaleFactor": processor.get("scaleFactor", "unknown")
-                    }
-                    result["processors"].append(proc_info)
                     
             print(colorize_json(result))
             
@@ -692,7 +688,7 @@ def main():
                 result = {
                     "timestamp": timestamp,
                     "operation": "restart",
-                    "summary": {"total": 2, "success": 0, "failed": 0},
+                    "summary": {"total": 3, "success": 0, "failed": 0},
                     "processors": []
                 }
                 
@@ -706,6 +702,56 @@ def main():
                 
                 # Wait a bit
                 time.sleep(2)
+                
+                # Update processor definition from JSON file (NEW STEP)
+                try:
+                    processor_file = Path(f"processors/{args.processor}.json")
+                    if processor_file.exists():
+                        with open(processor_file, 'r') as f:
+                            processor_data = json.load(f)
+                        
+                        pipeline = processor_data.get("pipeline", [])
+                        options = processor_data.get("options")
+                        
+                        if pipeline:
+                            update_result = api.update_processor(
+                                processor_name=args.processor,
+                                pipeline=pipeline,
+                                options=options
+                            )
+                            result["processors"].append(update_result)
+                            if update_result["status"] == "updated":
+                                result["summary"]["success"] += 1
+                            else:
+                                result["summary"]["failed"] += 1
+                        else:
+                            update_result = {
+                                "name": args.processor,
+                                "operation": "update_processor",
+                                "status": "failed",
+                                "message": "No pipeline found in JSON file"
+                            }
+                            result["processors"].append(update_result)
+                            result["summary"]["failed"] += 1
+                    else:
+                        update_result = {
+                            "name": args.processor,
+                            "operation": "update_processor", 
+                            "status": "skipped",
+                            "message": f"JSON file not found: {processor_file}"
+                        }
+                        result["processors"].append(update_result)
+                        result["summary"]["success"] += 1  # Don't count as failure since processor can exist without local JSON
+                        
+                except Exception as e:
+                    update_result = {
+                        "name": args.processor,
+                        "operation": "update_processor",
+                        "status": "failed", 
+                        "message": f"Error updating processor: {str(e)}"
+                    }
+                    result["processors"].append(update_result)
+                    result["summary"]["failed"] += 1
                 
                 # Start processor
                 tier = None
@@ -829,13 +875,7 @@ def main():
                 print(colorize_json(error_result))
                 sys.exit(1)
         
-        elif args.processor_action == "test":
-            # Handle processor testing
-            result = test_processors(processor_name=args.processor)
-            
-            # The test function already prints the colorized output
-            # Just exit with the appropriate code
-            sys.exit(0 if result.get("success", False) else 1)
+        # ...test feature removed...
         
         elif args.processor_action == "tier-advise":
             # Handle tier analysis/advice
@@ -986,6 +1026,210 @@ def main():
                     "message": str(e)
                 }
                 print(colorize_json(result))
+        
+        elif args.processor_action == "schema":
+            # Sample processor output to show schema
+            result = api.sample_processor(args.processor_name, num_samples=args.num_samples)
+            print(colorize_json(result))
+        
+        return
+
+    # Handle collections management commands
+    if args.command == "collections":
+        if not args.collections_action:
+            collections_parser.print_help()
+            sys.exit(1)
+        
+        if args.collections_action == "count":
+            if not args.collection:
+                collections_count_parser.print_help()
+                sys.exit(1)
+            
+            # Parse database and collection from the collection argument (format: database.collection)
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                # Default to 'test' database if not specified
+                database = 'test'
+                collection = args.collection
+            
+            # Count documents in the specified collection
+            result = api.check_collection(database, collection)
+            print(colorize_json(result))
+        
+        elif args.collections_action == "query":
+            # Query documents from collection
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                database = 'test'
+                collection = args.collection
+            
+            # Parse filter and projection if provided
+            filter_doc = {}
+            if args.filter:
+                filter_doc = json.loads(args.filter)
+            
+            projection = None
+            if args.projection:
+                projection = json.loads(args.projection)
+            
+            result = api.query_collection(database, collection, filter_doc, projection, args.limit)
+            print(colorize_json(result))
+        
+        elif args.collections_action == "list":
+            # List all collections in the specified database
+            result = api.list_database_collections(args.database)
+            print(colorize_json(result))
+        
+        elif args.collections_action == "ttl":
+            if not args.collection:
+                collections_ttl_parser.print_help()
+                sys.exit(1)
+            
+            # Parse database and collection from the collection argument (format: database.collection)
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                # Default to 'test' database if not specified
+                database = 'test'
+                collection = args.collection
+            
+            # Manage TTL for the specified collection
+            result = api.manage_collection_ttl(database, collection, args.seconds, args.field)
+            print(colorize_json(result))
+        
+        elif args.collections_action == "insertOne":
+            if not args.collection:
+                collections_insert_parser.print_help()
+                sys.exit(1)
+            
+            # Parse database and collection from the collection argument (format: database.collection)
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                print(colorize_json({"status": "error", "message": "Collection must be in format: database.collection"}))
+                sys.exit(1)
+            
+            # Parse document or generate a test document
+            if args.document:
+                try:
+                    document = json.loads(args.document)
+                except json.JSONDecodeError as e:
+                    print(colorize_json({"status": "error", "message": f"Invalid JSON document: {e}"}))
+                    sys.exit(1)
+            else:
+                # Generate a test document with timestamp (datetime imported at top)
+                document = {
+                    "test": True,
+                    "message": "Test document inserted by sp tool",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "_ts": datetime.now(timezone.utc)
+                }
+            
+            result = api.insert_one(database, collection, document)
+            print(colorize_json(result))
+        
+        elif args.collections_action == "deleteOne":
+            if not args.collection:
+                collections_delete_parser.print_help()
+                sys.exit(1)
+            
+            # Parse database and collection from the collection argument (format: database.collection)
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                print(colorize_json({"status": "error", "message": "Collection must be in format: database.collection"}))
+                sys.exit(1)
+            
+            # Parse filter or default to empty (deletes first document)
+            filter_doc = {}
+            if args.filter:
+                try:
+                    filter_doc = json.loads(args.filter)
+                except json.JSONDecodeError as e:
+                    print(colorize_json({"status": "error", "message": f"Invalid JSON filter: {e}"}))
+                    sys.exit(1)
+            
+            result = api.delete_one(database, collection, filter_doc)
+            print(colorize_json(result))
+        
+        elif args.collections_action == "index":
+            if not args.collection:
+                collections_index_parser.print_help()
+                sys.exit(1)
+            
+            # Parse database and collection from the collection argument (format: database.collection)
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                print(colorize_json({"status": "error", "message": "Collection must be in format: database.collection"}))
+                sys.exit(1)
+            
+            if args.list:
+                # List all indexes
+                result = api.list_indexes(database, collection)
+            elif args.drop:
+                # Drop an index by name
+                result = api.drop_index(database, collection, args.drop)
+            elif args.keys:
+                # Create an index
+                try:
+                    keys = json.loads(args.keys)
+                except json.JSONDecodeError as e:
+                    print(colorize_json({"status": "error", "message": f"Invalid JSON keys: {e}"}))
+                    sys.exit(1)
+                result = api.create_index(database, collection, keys, unique=args.unique, name=args.name)
+            else:
+                # Default to list if no action specified
+                result = api.list_indexes(database, collection)
+            
+            print(colorize_json(result))
+        
+        elif args.collections_action == "preImages":
+            if not args.collection:
+                collections_preimages_parser.print_help()
+                sys.exit(1)
+            
+            # Parse database and collection from the collection argument (format: database.collection)
+            if '.' in args.collection:
+                database, collection = args.collection.split('.', 1)
+            else:
+                print(colorize_json({"status": "error", "message": "Collection must be in format: database.collection"}))
+                sys.exit(1)
+            
+            if args.disable:
+                result = api.set_pre_post_images(database, collection, enabled=False)
+            else:
+                # Default to enable
+                result = api.set_pre_post_images(database, collection, enabled=True)
+            
+            print(colorize_json(result))
+        
+        return
+
+    # Handle materialized views management commands  
+    if args.command == "materialized_views":
+        if not args.materialized_views_action:
+            materialized_views_parser.print_help()
+            sys.exit(1)
+        
+        if args.materialized_views_action == "create":
+            # Adjust path since we're running from tools/sp/ directory
+            config_dir = "../../" if Path("../../processors").exists() else "./"
+            processor_file = os.path.join(config_dir, "processors", args.file)
+            
+            # Create materialized view
+            result = api.create_materialized_view(args.view_name, args.database, processor_file)
+            print(colorize_json(result))
+            
+        elif args.materialized_views_action == "list":
+            result = api.list_materialized_views(database=args.database)
+            print(colorize_json(result))
+            
+        elif args.materialized_views_action == "drop":
+            result = api.drop_materialized_view(args.view_name, database=args.database)
+            print(colorize_json(result))
         
         return
 

@@ -1,0 +1,199 @@
+{
+  "description": "Sample outputs from SP tool commands",
+  "examples": [
+    {
+      "command": "./sp processors test",
+      "description": "Testing processor configurations",
+      "output": {
+        "timestamp": "2026-01-21T10:30:00.000Z",
+        "operation": "test",
+        "summary": {
+          "total": 3,
+          "passed": 3,
+          "failed": 0
+        },
+        "results": [
+          {
+            "processor": "solar_simple_processor",
+            "file": "/path/to/processors/solar_simple_processor.json",
+            "status": "passed",
+            "validation": {
+              "pipeline": "valid",
+              "options": "valid",
+              "tier": "SP30"
+            }
+          },
+          {
+            "processor": "solar_efficiency_monitor",
+            "file": "/path/to/processors/solar_efficiency_monitor.json",
+            "status": "passed",
+            "validation": {
+              "pipeline": "valid",
+              "options": "valid",
+              "tier": "SP50"
+            }
+          },
+          {
+            "processor": "solar_boost_materialized_view",
+            "file": "/path/to/processors/solar_boost_materialized_view.json",
+            "status": "passed",
+            "validation": {
+              "pipeline": "valid",
+              "options": "valid",
+              "tier": "SP30"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "command": "./sp processors create",
+      "description": "Creating/deploying processors",
+      "output": {
+        "timestamp": "2026-01-21T10:35:00.000Z",
+        "operation": "create_processors",
+        "summary": {
+          "total": 2,
+          "success": 2,
+          "failed": 0
+        },
+        "processors": [
+          {
+            "name": "solar_simple_processor",
+            "file": "../processors/solar_simple_processor.json",
+            "operation": "create_processor",
+            "status": "created",
+            "tier": "SP30",
+            "message": "Processor created successfully"
+          },
+          {
+            "name": "solar_efficiency_monitor",
+            "file": "../processors/solar_efficiency_monitor.json",
+            "operation": "create_processor",
+            "status": "created",
+            "tier": "SP50",
+            "message": "Processor created successfully"
+          }
+        ]
+      }
+    },
+    {
+      "command": "./sp processors list",
+      "description": "Listing processors and their status",
+      "output": {
+        "timestamp": "2026-01-21T10:40:00.000Z",
+        "operation": "list_processors",
+        "processors": [
+          {
+            "name": "solar_simple_processor",
+            "state": "CREATED",
+            "tier": "SP30",
+            "created": "2026-01-21T10:35:00Z",
+            "lastModified": "2026-01-21T10:35:00Z"
+          },
+          {
+            "name": "solar_efficiency_monitor",
+            "state": "STARTED",
+            "tier": "SP50",
+            "created": "2026-01-21T10:35:00Z",
+            "lastModified": "2026-01-21T10:38:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "command": "./sp processors stats --processor solar_efficiency_monitor",
+      "description": "Getting performance statistics for a specific processor",
+      "output": {
+        "timestamp": "2026-01-21T10:45:00.000Z",
+        "operation": "stats",
+        "processor": "solar_efficiency_monitor",
+        "stats": {
+          "state": "STARTED",
+          "tier": "SP50",
+          "metrics": {
+            "inputDocumentsPerSecond": 125.5,
+            "outputDocumentsPerSecond": 98.3,
+            "processingTimeMs": 15.2,
+            "memoryUsageMB": 245
+          },
+          "uptime": "7m 30s"
+        }
+      }
+    },
+    {
+      "command": "./sp workspaces connections create",
+      "description": "Creating connections from connections.json",
+      "output": {
+        "timestamp": "2026-01-21T10:50:00.000Z",
+        "operation": "create_connections",
+        "summary": {
+          "total": 2,
+          "success": 2,
+          "failed": 0
+        },
+        "connections": [
+          {
+            "name": "weatherflow_https",
+            "type": "https",
+            "operation": "create_connection",
+            "status": "created",
+            "message": "HTTP connection created successfully"
+          },
+          {
+            "name": "kgShardedCluster01",
+            "type": "cluster",
+            "operation": "create_connection",
+            "status": "already_exists",
+            "message": "Connection already exists"
+          }
+        ]
+      }
+    },
+    {
+      "command": "./sp processors start -p solar_simple_processor --auto",
+      "description": "Starting a processor with auto-wait",
+      "output": {
+        "timestamp": "2026-01-21T10:55:00.000Z",
+        "operation": "start_processor",
+        "processor": "solar_simple_processor",
+        "status": "started",
+        "message": "Processor started successfully",
+        "finalState": "STARTED"
+      }
+    },
+    {
+      "command": "./sp processors drop solar_simple_processor",
+      "description": "Deleting a specific processor",
+      "output": {
+        "timestamp": "2026-01-21T11:00:00.000Z",
+        "operation": "drop_processor",
+        "processor": "solar_simple_processor",
+        "status": "deleted",
+        "message": "Processor deleted successfully"
+      }
+    },
+    {
+      "command": "./sp workspaces list",
+      "description": "Listing all workspaces",
+      "output": {
+        "timestamp": "2026-01-21T11:05:00.000Z",
+        "operation": "list_workspaces",
+        "workspaces": [
+          {
+            "name": "production-workspace",
+            "cloudProvider": "AWS",
+            "region": "US_EAST_1",
+            "state": "ACTIVE"
+          },
+          {
+            "name": "dev-workspace",
+            "cloudProvider": "AWS",
+            "region": "US_WEST_2",
+            "state": "ACTIVE"
+          }
+        ]
+      }
+    }
+  ]
+}
